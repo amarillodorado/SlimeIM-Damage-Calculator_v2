@@ -1,0 +1,10 @@
+{
+  "name": "Slime IM Damage Calc",
+  "short_name": "Slime Calc",
+  "description": "Damage calculator and team simulator for SLIME - ISEKAI Memories",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a111c",
+  "theme_color": "#0d8ac0",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

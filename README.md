@@ -1,0 +1,53 @@
+# Slime IM Damage Calculator
+
+A browser-local damage calculator and buff-combination comparison tool for **SLIME – ISEKAI Memories**. It implements supported parts of the damage path recovered from the supplied 5.0.20 client. The guide identifies assumptions and unsupported mechanics.
+
+- **Calculator:** enter current Battle ATK, enemy DEF/resistances, the used card, applicable effects and the special-hit outcomes that occurred. See the nominal-roll result, the full 200-roll variance range and the calculation trace.
+- **Check a real hit:** test whether any allowed roll reproduces recorded damage. A match shows compatibility with the supplied setup; it does not identify the actual random draw or prove each input independently.
+- **Several hits:** enter each attack separately and sum their results. Enter a resolved combo multiplier rather than inferring one from orb position.
+- **Buff comparison:** compare supported applicable effects under a skill-point budget. This is not a complete battle, turn-order or proc-chance simulator. Verify skill conditions and legal stacking yourself.
+- **Guide:** where to read inputs, how to avoid double counting, supported effect categories and limitations.
+
+The calculator starts with one blank hit. The historical battle examples are test fixtures only and are not loaded into the app. Your own inputs are then remembered in this browser; use **Clear** for a fresh run. The new workspace storage key starts clean without deleting older saved data. A share link opens the setup explicitly encoded in that link.
+
+**Required-input guidance:** Highlight required inputs starts on. Confirm the highlighted choices, including choices already selected by default, and enter or explicitly confirm the required numeric values. Missing values keep the calculation unavailable; turning off highlighting does not disable these checks. Synergy asks for support ATK, Aegis asks for own battle DEF, and True Attribute Unbound asks only for the factor matching the selected popup. Ordinary orbs default to100% power, with an optional advanced override. Saved confirmations and separate buff-source entries are preserved, including in share links. Older setups keep their values and require confirmation once after this update.
+
+## Run locally
+
+1. Install [Node.js](https://nodejs.org/) LTS.
+2. **Windows:** double-click `start.bat`. **macOS / Linux:** run `sh start.sh`.
+3. Stop the local server with Ctrl+C when finished.
+
+## Development
+
+```bash
+npm install
+npm start
+npm run dev
+npm test
+npm run typecheck
+npm run build
+```
+
+`npm run build` writes the static site to `dist/`. `npm run check` runs the project's combined lint, type, test and build checks. No account or application server is required. Inputs stay in browser storage; share links carry the selected setup in the URL fragment.
+
+## Before checking a battle
+
+Use **Battle ATK** from the same turn as the hit. Ordinary ATK-stat buffs are already included. Estimated pre-battle mode is for planning because character-page totals do not establish every native stat base. Enter independent ATK percentage sources separately for per-entry rounding. For Super Pierce, Super Synergy and Super Aegis, preserve simultaneous positive and negative sources separately.
+
+The result is conditional on the entered hit outcomes and effect eligibility. Barriers, absorption, direct-damage battle skills, counterattacks, multi-hit distribution, damage over time and Vengeance are outside this interface. Super Critical's two numeric coefficients were not recovered from the supplied files.
+
+## Documentation
+
+- [Verification procedure](docs/VERIFICATION.md)
+- [Requirements and scope](docs/REQUIREMENTS.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Client-recovery reference](docs/DAMAGE_FORMULA.md)
+
+## Static hosting
+
+Build with `npm run build` and serve `dist/` on a static host. Asset URLs are relative, so sub-path hosting is supported. The included Docker configuration serves the build with nginx (`$PORT`, default 8080).
+
+## Credits
+
+Fan-made; not affiliated with WFS or Bandai Namco Entertainment. Game screenshots and unit icons belong to their owners. Community preset skill values should be checked in-game before relying on a ranking.
