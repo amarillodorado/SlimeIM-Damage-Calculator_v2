@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Icon, type IconName } from '../components/Icon';
 import { CalculatorPage } from '../features/calculator/CalculatorPage';
 import { decodeWorkspace } from '../state/share';
@@ -25,6 +26,7 @@ const TITLES: Record<Page, string> = {
 export function App() {
   const { route, navigate } = useHashRoute();
   const { dispatch } = useWorkspace();
+  const analyticsPath = `/${route.page}`;
 
   // A share link (#/calculator?s=…) replaces the current workspace once.
   useEffect(() => {
@@ -88,6 +90,8 @@ export function App() {
           </a>
         ))}
       </nav>
+      {/* Track hash-based pages without including share codes or guide anchors. */}
+      <Analytics route={analyticsPath} path={analyticsPath} mode={import.meta.env.DEV ? 'development' : 'production'} />
     </>
   );
 }
