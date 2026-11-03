@@ -114,39 +114,25 @@ export function AttackerCard({ result }: { result?: HitSummary }) {
         ) : (
           <>
             <p className={css.explain}>
-              Planning estimate: <b>character ATK + optional support ATK</b>, then each independent ATK percentage is rounded separately. Flat ATK is added
-              afterward. The original base used by the game can differ from character-page totals; use battle ATK to check an actual hit.
+              Planning estimate: the <b>ATK under your character on the troop screen</b> (Status Attributes), plus every “Increased ATK by X%” it gets in battle
+              — the Divine Protection’s too, the troop screen leaves it out. Use Battle ATK to check a real hit.
             </p>
             <div className={ui.grid}>
-              <Field help="characterAtk" inputKey="attacker.characterAtk">
+              <Field help="troopAtk" inputKey="attacker.troopAtk">
                 {(id) => (
                   <NumberInput
                     id={id}
-                    value={a.characterAtk}
-                    onChange={(characterAtk) => setAttacker({ characterAtk })}
-                    onConfirm={(filled) => confirmInput('attacker.characterAtk', filled)}
-                  />
-                )}
-              </Field>
-              <Field help="addSupportAtk" inputKey="attacker.addSupportAtk" group note="Estimate: support scaling and original stat bases may differ.">
-                {() => (
-                  <Segmented
-                    ariaLabel="Add support ATK"
-                    value={a.addSupportAtk ? 'on' : 'off'}
-                    options={[
-                      { value: 'off', label: 'Off' },
-                      { value: 'on', label: 'On', sub: `+${fmtInt(a.supportAtk)} ATK` },
-                    ]}
-                    onChange={(choice) => setAttacker({ addSupportAtk: choice === 'on' })}
+                    value={a.troopAtk}
+                    onChange={(troopAtk) => setAttacker({ troopAtk })}
+                    onConfirm={(filled) => confirmInput('attacker.troopAtk', filled)}
                   />
                 )}
               </Field>
               <EffectField type="atkPct" />
-              <EffectField type="atkFlat" />
             </div>
             {result && result.stats.length > 0 && (
               <div className={css.atkChain} aria-live="polite">
-                <span>Pre-battle {fmtInt(result.preBattleAtk ?? 0)}</span>
+                <span>Troop {fmtInt(result.preBattleAtk ?? 0)}</span>
                 {atkPct !== 0 && <span>{fmtPct(atkPct)}</span>}
                 <span className={css.atkResult}>= Battle ATK {fmtInt(result.battleAtk)}</span>
               </div>
@@ -155,13 +141,9 @@ export function AttackerCard({ result }: { result?: HitSummary }) {
         )}
       </div>
 
-      {(hit.attack.synergy !== 'off' || (a.atkMode === 'build' && a.addSupportAtk)) && (
+      {hit.attack.synergy !== 'off' && (
         <div className={ui.grid}>
-          <Field
-            help="supportAtk"
-            inputKey="attacker.supportAtk"
-            note={hit.attack.synergy !== 'off' ? 'Required by the selected Synergy outcome.' : 'Required because Add support ATK is enabled.'}
-          >
+          <Field help="supportAtk" inputKey="attacker.supportAtk" note="Required by the selected Synergy outcome.">
             {(id) => (
               <NumberInput
                 id={id}
@@ -187,7 +169,7 @@ export function AttackerCard({ result }: { result?: HitSummary }) {
           <p className={ui.note}>True Attribute Unbound requires a “+” attribute. Choose the eligible attribute above or switch this effect off.</p>
         )}
         {a.tau.active && hit.attack.popup === 'none' && (
-          <p className={ui.note}>Choose the Weak Point or Super Weak Point popup in step 2, or switch True Attribute Unbound off.</p>
+          <p className={ui.note}>Choose Weak Point or Super Weak Point under Weakness result in step 2, or switch True Attribute Unbound off.</p>
         )}
         {a.tau.active && a.plus && hit.attack.popup !== 'none' && (
           <div className={ui.grid}>

@@ -12,17 +12,19 @@ import {
   PopupsGuide,
   QuickStart,
   TauGuide,
+  TwoWays,
   VerifiedGuide,
   WhereToFind,
 } from './sections';
 
 const SECTIONS: [string, string][] = [
   ['start', 'Quick start'],
-  ['atk', 'ATK: two ways'],
+  ['ways', 'Two ways to collect values'],
+  ['atk', 'Battle vs. pre-battle ATK'],
   ['values', 'Where to find values'],
   ['double', 'Avoid double counting'],
   ['effects', 'All effect types'],
-  ['popups', 'Popups & attributes'],
+  ['popups', 'Popups & special hits'],
   ['combo', 'Combo bonus'],
   ['tau', 'True Attribute Unbound'],
   ['formula', 'How it’s calculated'],
@@ -48,6 +50,7 @@ export default function GuidePage({ section }: { section?: string }) {
       </nav>
       <div className={css.content}>
         <QuickStart />
+        <TwoWays />
         <AtkGuide />
         <WhereToFind />
         <DoubleCounting />

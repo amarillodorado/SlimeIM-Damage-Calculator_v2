@@ -19,21 +19,18 @@ const HELP = {
     includes: 'The ATK-stat effects already reflected in this panel, including active stat buffs and the current loadout.',
     use: 'Copy it on the turn of the hit. Do not add ordinary Increased ATK effects again. Attack-power and damage-power effects use their separate fields.',
   },
-  characterAtk: {
-    label: 'Character ATK',
-    where: 'Character page → Status Attributes, outside battle.',
-    includes: 'The character-page total for that loadout.',
-    use: 'Used only in estimated pre-battle mode. Character-page totals do not establish the native original base for every stat buff; compare the estimated result with the battle panel.',
+  troopAtk: {
+    label: 'Troop ATK',
+    where: 'Troop screen → press Status Attributes below the troop until HP, ATK and DEF show under each character → the ATK under your character.',
+    includes:
+      'Your character’s combined lineup ATK, including equipment, the attached support character (the small portrait below it), applicable EX abilities and the protector’s flat ATK contribution. The Divine Protection’s percentage ATK boost is not included.',
+    use: 'Used only in pre-battle mode. Read it in the troop you fight with: another support, protector or teammate changes it. Then enter every “Increased ATK by X%” the character gets in battle in Increased ATK %, the Divine Protection’s boost included.',
+    confidence: 'assumed',
   },
   supportAtk: {
     label: 'Support character ATK',
-    where: 'Open the own status page of the attached support character, the small card below the attacker in the troop.',
-    use: 'Ordinary Synergy adds 40% of this value to the attack input; Super Synergy uses 55%. Use the same loadout as the recorded hit. This is different from the other attackers in an eligible combo.',
-  },
-  addSupportAtk: {
-    label: 'Support ATK in pre-battle ATK',
-    where: 'Attached support character’s status page.',
-    use: 'Optionally adds its ATK to the estimate. The exact pre-battle composition is not fully established, so this is not an exact substitute for the displayed Battle ATK.',
+    where: 'Open the attached support character’s own page; its portrait appears below your character in the troop.',
+    use: 'Only for Synergy: ordinary Synergy adds 40% of this value to the attack input, Super Synergy 55%. Use the support’s own ATK, not the troop ATK. This is different from the other attackers in an eligible combo.',
   },
   attribute: {
     label: 'Attribute',
@@ -48,7 +45,7 @@ const HELP = {
   tau: {
     label: 'True Attribute Unbound',
     where: 'Character page → Skill → True Attribute Unbound.',
-    use: 'Enable only during its listed turns and conditions. Copy the Weak Point and Super Weak Point factors for this character. The selected observed popup chooses the factor.',
+    use: 'Enable only during its listed turns and conditions. Copy the Weak Point and Super Weak Point factors for this character. The selected weakness result chooses the factor.',
   },
   ownDef: {
     label: 'Your DEF',
@@ -57,47 +54,43 @@ const HELP = {
   },
   kind: {
     label: 'Hit type',
-    where: 'The attack card actually used.',
-    use: 'Soul of Combos is the secret-skill orb. Normal orb is another soul attack. Enter supported buffs from battle skills under Buffs & debuffs; direct-damage battle skills are not modeled here.',
+    where: 'The soul used for this attack.',
+    use: 'Soul of Combos uses the character’s secret skill. Choose Normal soul for other attack souls. Enter supported buffs from battle skills under Buffs & debuffs; direct-damage battle skills are not modeled here.',
   },
   power: {
-    label: 'Damage % on the card',
-    where: 'Open the card or skill description for the attack version used.',
+    label: 'Damage % on the soul',
+    where: 'Open the soul or skill description for the attack version used.',
     includes: 'Use the displayed percentage. A displayed EX/Ultimate percentage already includes that version’s power boost.',
-    use: 'For a secret skill, enter the actual selected card percentage, such as 600 for 600%. EX/Ultimate power is already included in that displayed percentage. Ordinary orbs use the recovered 100% baseline automatically; use the advanced override only for a verified replacement attack.',
+    use: 'For a secret skill, enter the actual selected soul percentage, such as 600 for 600%. EX/Ultimate power is already included in that displayed percentage. Ordinary souls use the recovered 100% baseline automatically; use the advanced override only for a verified replacement attack.',
   },
   variant: {
     label: 'Soul of Combos version',
-    where: 'The card title: Soul of Combos, EX Soul of Combos or Ultimate Soul of Combos.',
-    use: 'Choose the version first, then enter the percentage displayed on that version’s card. Normal and EX use the entered percentage without an extra version multiplier. Ultimate additionally enables Ultimate-only damage effects and its natural-advantage weakness addition. Changing versions clears the previous percentage to avoid reusing the wrong card power.',
+    where: 'The soul’s name: Soul of Combos, EX Soul of Combos or Ultimate Soul of Combos.',
+    use: 'Choose the version first, then enter the percentage displayed for that version. Normal and EX use the entered percentage without an extra version multiplier. Ultimate additionally enables Ultimate-only damage effects and its natural-advantage weakness addition. Changing versions clears the previous percentage to avoid reusing the wrong soul power.',
   },
   ultimateBonus: {
     label: 'Ultimate bonus vs. weak attributes',
-    where:
-      'The character’s resolved Ultimate weakness addition. This starts unknown because the supplied 140% global fallback is not a verified per-character value.',
-    use: 'Enter 40 for an addition of 0.4: an enhanced advantage then becomes 1.5 + 0.1 + 0.4 = 2.0, before other weakness effects. A value of 140 instead produces 3.0. This is not a universal 40% constant. The supported attacking-Ultimate branch adds it only on natural advantage; a forced Weak Point popup on a neutral matchup does not activate it.',
-    confidence: 'client',
-  },
-  comboPosition: {
-    label: 'Orb in the chain',
-    where: 'The attack’s position in the selected soul chain.',
-    use: 'Optional identification only. Select the applicable Combo finisher separately: None for 1–3 selected cards and non-finishers, or 4/5/6 cards for the last eligible normal orb. Selected secret skills count toward chain length. The displayed chain BONUS concerns gauge points, not this damage factor.',
+    where: 'Ultimate Soul of Combos: “Greatly increases damage to weak attributes”. The game shows no number.',
+    use: 'Counts only when your attribute beats the enemy’s, not because of a Weak Point popup on a neutral matchup. 40% adds 0.4 to the attribute factor: with a “+” attribute 1.5 + 0.1 + 0.4 = 2.0. Both recorded Ultimate hits on a weaker attribute matched 40% exactly; change it only if a hit of another character shows a different value.',
+    example: 'Milim (Dark+) vs. Gold Bat (Light): ×1.6 → ×2.0.',
+    confidence: 'verified',
   },
   matchup: {
     label: 'Base attribute matchup',
     where: 'In-game attribute help chart.',
-    use: 'Auto uses Fire → Earth → Space → Wind → Water → Fire; Light and Dark beat each other. Natural advantage is 1.5, or 1.6 with the eligible enhanced adjustment. This selector shows the base only. Ultimate and weakness contributions are included in the separate Resolved attribute factor readout; do not multiply the base factor again.',
+    use: 'Auto uses Fire → Earth → Space → Wind → Water → Fire; Light and Dark beat each other. Natural advantage is 1.5, or 1.6 with the eligible enhanced adjustment. This selector shows the base only. The “=” line below adds the Ultimate and weakness contributions and shows the resulting factor; do not multiply the base factor again. True Attribute Unbound is a separate factor.',
     image: { src: 'guide/attribute-chart.webp', alt: 'In-game attribute matchup chart' },
   },
   popup: {
-    label: 'Popup on the hit',
+    label: 'Weakness result',
     where: 'The Weak Point! or Super Weak Point! text shown on the hit.',
-    use: 'Selects eligible weakness effects and True Attribute Unbound. It does not replace the natural attribute matchup.',
+    use: 'Select None, Weak Point or Super Weak Point as shown on the attack. Attribute-side weakness can come from the natural matchup or an applicable protection bonus against the enemy’s attribute. Super Weak Point also requires weakness to the attack type you use: Physical for a physical attacker, Magic for a magic attacker. Attribute-side weakness alone gives Weak Point; attack-type weakness alone gives no weakness message. This selects eligible weakness effects and True Attribute Unbound without replacing the natural attribute matchup.',
+    example: 'Magic Milim with an applicable damage-to-Wind protection bonus against a Wind enemy weak only to Physical shows Weak Point. Super Weak Point additionally requires weakness to Magic.',
   },
   specialHits: {
     label: 'Special hits',
     where: 'Hit popups such as Critical, Pierce, Synergy and Aegis.',
-    use: 'Select the outcome that occurred. Rate effects are chances, not damage-power factors. Super Critical is unavailable because its two numeric coefficients were not recovered from the supplied files. For other Super hits, keep simultaneous positive and negative sources separate.',
+    use: 'Select the outcome that occurred; its power and resistance fields then appear below it. Rate effects are chances, not damage-power factors. How each special hit changes the damage is explained in Guide → Popups & special hits. Super Critical is unavailable because its two numeric coefficients were not recovered from the supplied files. For other Super hits, keep simultaneous positive and negative sources separate.',
   },
   enemyDef: {
     label: 'Enemy DEF',

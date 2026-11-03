@@ -202,26 +202,17 @@
   border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
 }
 
-.specialHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-3);
-}
-
-.specialText {
-  flex: 1 1 220px;
-  min-width: 0;
-}
-
-.specialTitle {
-  font-size: var(--font-size-m);
-}
-
 .specialControl {
-  flex: 0 1 260px;
-  min-width: min(100%, 210px);
+  width: 100%;
+  max-width: 360px;
+}
+
+/* The resolved attribute factor under the matchup selector: “= 1.5 + 0.1 (Dark+) = ×1.6”. */
+.factorLine {
+  font-size: var(--font-size-s);
+  font-weight: 650;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Buffs & debuffs ---------- */

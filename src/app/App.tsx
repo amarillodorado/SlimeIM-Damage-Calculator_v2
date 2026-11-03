@@ -57,7 +57,7 @@ export function App() {
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={34} height={34} />
             <span className={styles.brandText}>
               <strong>Slime IM Damage Calc</strong>
-              <span>ISEKAI Memories · v6.2.2</span>
+              <span>ISEKAI Memories · v6.3.0</span>
             </span>
           </a>
           <nav className={styles.nav} aria-label="Main">
@@ -77,10 +77,7 @@ export function App() {
           {route.page === 'teams' && <TeamsPage />}
           {route.page === 'guide' && <GuidePage section={route.section} />}
         </Suspense>
-        <footer className={styles.footer}>
-          Fan-made tool, not affiliated with Bandai Namco. Based on client 5.0.20; supported resolved-hit calculations and input assumptions are described in
-          the Guide.
-        </footer>
+        <footer className={styles.footer}>Fan-made tool, not affiliated with Bandai Namco.</footer>
       </main>
 
       <nav className={styles.bottomNav} aria-label="Main">

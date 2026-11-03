@@ -23,17 +23,14 @@ export function getRequirements(hit: Hit, enemy: Enemy): Requirement[] {
     } else rows.push({ key, label, kind, ...(message ? { message } : {}) });
   };
   const number = (key: InputKey, label: string, valid: boolean, invalidMessage?: string) =>
-    add(key, label, 'number', valid ? undefined : (invalidMessage ?? `Enter a valid ${label.toLowerCase()}.`));
+    add(key, label, 'number', valid ? undefined : (invalidMessage ?? `Enter a valid ${label.charAt(0).toLowerCase()}${label.slice(1)}.`));
 
   add('attacker.attribute', 'Attacker attribute');
   add('attacker.attackType', 'Attack type');
   add('attacker.atkMode', 'ATK input mode');
   if (a.atkMode === 'battle') number('attacker.battleAtk', 'Battle ATK', nonnegative(a.battleAtk));
-  else {
-    number('attacker.characterAtk', 'Character ATK', nonnegative(a.characterAtk));
-    add('attacker.addSupportAtk', 'Add support ATK');
-  }
-  if (k.synergy !== 'off' || (a.atkMode === 'build' && a.addSupportAtk)) number('attacker.supportAtk', 'Support character ATK', nonnegative(a.supportAtk));
+  else number('attacker.troopAtk', 'Troop ATK', nonnegative(a.troopAtk));
+  if (k.synergy !== 'off') number('attacker.supportAtk', 'Support character ATK', nonnegative(a.supportAtk));
   if (k.aegis !== 'off') number('attacker.ownDef', 'Your DEF', nonnegative(a.ownDef));
 
   add('attack.kind', 'Hit type');
@@ -42,7 +39,7 @@ export function getRequirements(hit: Hit, enemy: Enemy): Requirement[] {
     add('attack.variant', 'Soul of Combos version');
     number(
       'attack.power',
-      'Damage % on the card',
+      'Damage % on the soul',
       finite(k.power) && k.power > 0,
       'Enter a valid secret-skill damage percentage above 0%, such as 600%. A valid entry is confirmed automatically.',
     );
@@ -55,22 +52,22 @@ export function getRequirements(hit: Hit, enemy: Enemy): Requirement[] {
       );
   } else {
     const combo = k.comboMultiplier ?? 1;
-    add('attack.comboMultiplier', 'Combo finisher', 'choice', [1, 1.1, 1.5, 2].includes(combo) ? undefined : 'Choose a supported combo finisher.');
-    if (k.normalPowerOverride) number('attack.power', 'Normal orb power override', finite(k.power) && k.power > 0);
-    else if (k.power !== 100) add('attack.power', 'Normal orb power', 'number', 'Normal orbs use 100% unless an explicit power override is enabled.');
+    add('attack.comboMultiplier', 'Soul Combos', 'choice', [1, 1.1, 1.5, 2].includes(combo) ? undefined : 'Choose one of the Soul Combos options.');
+    if (k.normalPowerOverride) number('attack.power', 'Normal soul power override', finite(k.power) && k.power > 0);
+    else if (k.power !== 100) add('attack.power', 'Normal soul power', 'number', 'Normal souls use 100% unless an explicit power override is enabled.');
     if (combo === 1.5 || combo === 2) {
       number('attacker.comboBuddyAtk1', 'Combo attacker 1 ATK', nonnegative(a.comboBuddyAtk1));
       number('attacker.comboBuddyAtk2', 'Combo attacker 2 ATK', nonnegative(a.comboBuddyAtk2));
     }
   }
-  add('attack.popup', 'Popup on the hit');
+  add('attack.popup', 'Weakness result');
   add('attack.crit', 'Critical');
   add('attack.pierce', 'Pierce');
   add('attack.synergy', 'Synergy');
   add('attack.aegis', 'Aegis');
   if (a.tau.active) {
     if (!a.plus) add('attacker.attribute', 'Attacker attribute', 'choice', 'True Attribute Unbound requires a “+” attribute, or turn it off.');
-    if (k.popup === 'none') add('attack.popup', 'Popup on the hit', 'choice', 'Select the Weak Point popup for True Attribute Unbound, or turn it off.');
+    if (k.popup === 'none') add('attack.popup', 'Weakness result', 'choice', 'Select Weak Point or Super Weak Point under Weakness result for True Attribute Unbound, or turn it off.');
     else if (a.plus) {
       const superWeak = k.popup === 'superWeak';
       const factor = superWeak ? a.tau.superWeak : a.tau.weak;

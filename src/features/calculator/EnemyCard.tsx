@@ -79,7 +79,6 @@ export function EnemyCard() {
           inputKey="enemy.magicRes"
           label="Magic resistance"
           badge={usesMagic ? used : undefined}
-          note={usesMagic ? 'Required because this attacker uses Magic. Copy the enemy’s Magic Attack Resistance; a known 0% is valid.' : undefined}
         >
           {(id) => (
             <NumberInput

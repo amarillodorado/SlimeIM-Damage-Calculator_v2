@@ -43,7 +43,7 @@ export function BuffsCard() {
       summary={summary}
       subtitle={
         <>
-          The total per type from the battle effect list, equipment, EX abilities and the Soul of Combos card — same types add up. Critical, Pierce, Synergy and
+          The total per type from the battle effect list, equipment, EX abilities and the Soul of Combos — same types add up. Critical, Pierce, Synergy and
           Aegis buffs are in step 2, right under their special hit. <a href={hrefFor('guide', 'effects')}>Which field is it?</a>
         </>
       }

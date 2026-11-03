@@ -50,10 +50,8 @@ describe('required input contract', () => {
     const ws = entered(),
       hit = ws.hits[0]!;
     hit.attacker.atkMode = 'build';
-    hit.attacker.addSupportAtk = false;
     const build = getRequirements(hit, ws.enemy).map((row) => row.key);
-    expect(build).toContain('attacker.characterAtk');
-    expect(build).toContain('attacker.addSupportAtk');
+    expect(build).toContain('attacker.troopAtk');
     expect(build).not.toContain('attacker.battleAtk');
     expect(build).not.toContain('attacker.supportAtk');
     hit.attacker.tau.active = true;

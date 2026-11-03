@@ -50,20 +50,19 @@ describe('accuracy inputs', () => {
     expect(damage()).toBe('22,100');
   });
 
-  it('rounds each entered ATK source separately in estimated build mode', async () => {
+  it('estimates the ATK from the troop ATK and one Increased ATK % field', async () => {
     const ws = defaultWorkspace();
     ws.enemy.attribute = 'fire';
     ws.hits[0]!.attacker.atkMode = 'build';
-    ws.hits[0]!.attacker.characterAtk = 1001;
-    ws.hits[0]!.attacker.addSupportAtk = false;
+    ws.hits[0]!.attacker.troopAtk = 1001;
     ws.hits[0]!.attack = { ...ws.hits[0]!.attack, kind: 'soul', power: 100 };
     const user = userEvent.setup();
     show(confirmRequirements(ws));
-    const power = screen.getByRole('group', { name: 'Increased ATK % (each source)' });
-    await user.type(within(power).getByRole('spinbutton', { name: /source 1$/ }), '10');
-    await user.click(within(power).getByRole('button', { name: /Add .* source/ }));
-    await user.type(within(power).getByRole('spinbutton', { name: /source 2$/ }), '10');
-    expect(damage()).toBe('482');
+    expect(screen.queryByRole('button', { name: /Add .* source/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Support character ATK')).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText('Increased ATK %'), '20');
+    expect(damage()).toBe('481'); // 1,001 + 201 = 1,202 ATK
+    expect(screen.getByText('Troop 1,001')).toBeInTheDocument();
   });
 
   it('uses an explicit combo multiplier and optional qualifying buddies', async () => {
@@ -71,12 +70,12 @@ describe('accuracy inputs', () => {
     ws.hits[0]!.attack.kind = 'soul';
     const user = userEvent.setup();
     show(ws);
-    await user.click(within(screen.getByRole('radiogroup', { name: 'Combo finisher' })).getByRole('radio', { name: /150%/ }));
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Soul Combos' })).getByRole('radio', { name: /150%/ }));
     await user.type(screen.getByLabelText('Combo attacker 1 ATK'), '5000');
     await user.type(screen.getByLabelText('Combo attacker 2 ATK'), '5000');
     expect(damage()).toBe('4,620');
-    await user.click(within(screen.getByRole('radiogroup', { name: 'Orb in the chain' })).getByRole('radio', { name: '6' }));
-    expect(damage()).toBe('4,620');
+    expect(screen.queryByText('Orb position (optional)')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Orb in the chain' })).not.toBeInTheDocument();
   });
 
   it('restores signed entries even when their net is zero', () => {

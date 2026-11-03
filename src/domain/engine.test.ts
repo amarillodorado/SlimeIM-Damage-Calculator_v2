@@ -19,7 +19,7 @@ function hit(attacker: Partial<Attacker>, attack: Partial<Attack> = {}, effects:
 }
 
 describe('kernel and rounding', () => {
-  it('ignores stored buddy ATKs outside eligible five/six-card finishers', () => {
+  it('ignores stored buddy ATKs outside eligible five/six-soul finishers', () => {
     const attacker = { battleAtk: 10000, comboBuddyAtk1: 5000, comboBuddyAtk2: 5000 };
     expect(damageAt(hit(attacker, { comboMultiplier: 1 }, {}, { def: 5000 }))).toBe(3000);
     expect(damageAt(hit(attacker, { comboMultiplier: 1.1 }, {}, { def: 5000 }))).toBe(3300);
@@ -47,7 +47,7 @@ describe('DAMAGE_FORMULA.md §9 examples', () => {
   it('critical ×1.3 → 3,900', () => expect(damageAt(hit(base, { crit: true }, {}, def))).toBe(3900));
   it('pierce adds 6% ATK then ×1.5 → 5,400', () => expect(damageAt(hit(base, { pierce: 'normal' }, { piercePower: 50 }, def))).toBe(5400));
   it('skill 4.75×, combo 1.5×, advantage 1.5× → 32,063', () =>
-    expect(damageAt(hit(base, { power: 475, comboPosition: 5, comboMultiplier: 1.5 }, {}, { ...def, attribute: 'earth' }))).toBe(32063));
+    expect(damageAt(hit(base, { power: 475, comboMultiplier: 1.5 }, {}, { ...def, attribute: 'earth' }))).toBe(32063));
 });
 
 describe('verified hit (run 1, 2026-11-01)', () => {
@@ -67,7 +67,7 @@ describe('verified hit (run 1, 2026-11-01)', () => {
     expect(effectApplies('atkPct', input)).toEqual({ applies: false, reason: 'Already in the battle ATK' });
   });
   it('gives the same result when ATK is built from pre-battle values', () => {
-    const build: HitInput = { ...input, attacker: { ...input.attacker, atkMode: 'build', characterAtk: 7234 + 78 } };
+    const build: HitInput = { ...input, attacker: { ...input.attacker, atkMode: 'build', troopAtk: 14198 } }; // + 50% + 6%
     const r = calculateHit(build);
     expect(r.preBattleAtk).toBe(14198);
     expect(r.battleAtk).toBe(22149);
@@ -80,7 +80,7 @@ describe('Ultimate hit on a neutral attribute (run 3, 2026-11-01)', () => {
   const input = toInput(ws.hits[1]!, ws.enemy);
   const r = calculateHit(input);
   const factor = (id: string) => r.steps.find((s) => s.id === id)?.factor;
-  it('takes the 1080% from the card as it is; Dark vs. Wind gets no Ultimate bonus', () => {
+  it('takes the 1080% from the soul as it is; Dark vs. Wind gets no Ultimate bonus', () => {
     expect(factor('skill')).toBe(10.8);
     expect(factor('crit')).toBeCloseTo(2.14, 12); // 1.3 + 84% critical power
     expect(factor('matchup')).toBeUndefined(); // neutral ×1
@@ -111,19 +111,25 @@ describe('Ultimate hit on an attribute advantage (run 4, 2026-11-01)', () => {
 });
 
 describe('estimated pre-battle ATK', () => {
-  it('retains individual percentage entries for native per-entry rounding', () => {
+  it('adds all ATK % together and rounds up once', () => {
     expect(14198 + ratioDelta(14198, 56)).toBe(22149); // run 1: 50% + 6%
     expect(14198 + ratioDelta(14198, 50)).toBe(21297); // run 2: trait inactive
     expect(13462 + ratioDelta(13462, 56)).toBe(21001); // Rimuru, run 2
-    const input = hit({ atkMode: 'build', characterAtk: 1001, addSupportAtk: false }, {}, { atkPct: 20 }, { def: 0 });
-    input.effectEntries = { atkPct: [10, 10] };
-    expect(calculateHit(input).battleAtk).toBe(1203);
-    expect(damageAt(input)).toBe(482);
+    const input = hit({ atkMode: 'build', troopAtk: 1001 }, {}, { atkPct: 20 }, { def: 0 });
+    input.effectEntries = { atkPct: [10, 10] }; // older saved setups keep rows; still one rounding
+    expect(calculateHit(input).battleAtk).toBe(1202);
+    expect(damageAt(input)).toBe(481);
   });
-  it('does not let a flat delta increase the ratio-entry base', () => {
-    const r = calculateHit(hit({ atkMode: 'build', characterAtk: 7000, supportAtk: 3000, addSupportAtk: true }, {}, { atkFlat: 100, atkPct: 10 }));
+  it('starts from the troop ATK; the support ATK only matters for Synergy', () => {
+    const r = calculateHit(hit({ atkMode: 'build', troopAtk: 10000, supportAtk: 5000 }, {}, { atkPct: 10 }));
     expect(r.preBattleAtk).toBe(10000);
-    expect(r.battleAtk).toBe(11100);
+    expect(r.battleAtk).toBe(11000);
+    // Milim's base 14,689: +92% → 28,203 and +64% +6% → 24,972, both battle panels.
+    const milim = { atkMode: 'build' as const, troopAtk: 14689 };
+    expect(calculateHit(hit(milim, {}, { atkPct: 92 })).battleAtk).toBe(28203);
+    expect(calculateHit(hit(milim, {}, { atkPct: 70 })).battleAtk).toBe(24972);
+    // Rounding each of the six lines (25 + 14 + 11 + 3 × 14) separately would give 28,206.
+    expect(14689 + [25, 14, 11, 14, 14, 14].reduce((sum, pct) => sum + ratioDelta(14689, pct), 0)).toBe(28206);
   });
 });
 
@@ -162,19 +168,19 @@ describe('groups and special hits', () => {
   });
   it('stun and enamor strike add together', () =>
     expect(damageAt(hit(a, {}, { stunStrike: 30, enamorStrike: 30 }, { ...e, stunned: true, enamored: true }))).toBe(4800));
-  it('uses a resolved combo multiplier, not an inferred multiplier from position', () => {
-    expect(damageAt(hit(a, { comboPosition: 3 }, {}, e))).toBe(3000);
-    expect(damageAt(hit(a, { comboPosition: 3, comboMultiplier: 1.1 }, {}, e))).toBe(3300);
-    expect(damageAt(hit(a, { comboPosition: 1 }, { comboDmg: 10 }, e))).toBe(3000);
-    expect(damageAt(hit(a, { comboPosition: 3, comboMultiplier: 1 }, { comboDmg: 10 }, e))).toBe(3000);
-    expect(damageAt(hit(a, { comboPosition: 4, comboMultiplier: 1.1 }, { comboDmg: 10 }, e))).toBe(3600);
+  it('uses the explicit soul finisher and eligible combo damage', () => {
+    expect(damageAt(hit(a, {}, {}, e))).toBe(3000);
+    expect(damageAt(hit(a, { comboMultiplier: 1.1 }, {}, e))).toBe(3300);
+    expect(damageAt(hit(a, {}, { comboDmg: 10 }, e))).toBe(3000);
+    expect(damageAt(hit(a, { comboMultiplier: 1 }, { comboDmg: 10 }, e))).toBe(3000);
+    expect(damageAt(hit(a, { comboMultiplier: 1.1 }, { comboDmg: 10 }, e))).toBe(3600);
   });
-  it('gives the chain bonus to normal orbs only, not to Soul of Combos', () => {
-    const soc = hit(a, { kind: 'soulOfCombos', comboPosition: 3 }, { comboDmg: 10 }, e);
+  it('gives the chain bonus to normal souls only, not to Soul of Combos', () => {
+    const soc = hit(a, { kind: 'soulOfCombos' }, { comboDmg: 10 }, e);
     expect(damageAt(soc)).toBe(3000);
-    expect(effectApplies('comboDmg', soc).reason).toBe('Normal orbs only');
+    expect(effectApplies('comboDmg', soc).reason).toBe('Normal souls only');
   });
-  it('takes the card % as shown and adds the Ultimate bonus only on an attribute advantage', () => {
+  it('takes the soul % as shown and adds the Ultimate bonus only on an attribute advantage', () => {
     // EX/Ultimate cards show the boosted %, so nothing is multiplied again.
     expect(damageAt(hit(a, { kind: 'soulOfCombos', power: 150, variant: 'ex' }, {}, e))).toBe(4500);
     const ult = { kind: 'soulOfCombos' as const, power: 100, variant: 'ultimate' as const, ultimateBonus: 40 };

@@ -28,7 +28,6 @@ export type Guard = 'none' | 'guard' | 'superGuard';
 
 /** battle = ATK read from the battle screen; build = pre-battle ATK + ATK effects. */
 export type AtkMode = 'battle' | 'build';
-export type ComboPosition = 1 | 2 | 3 | 4 | 5 | 6;
 
 /** Explicit acknowledgements are separate from default numeric/choice values. */
 export const INPUT_KEYS = [
@@ -36,8 +35,7 @@ export const INPUT_KEYS = [
   'attacker.attackType',
   'attacker.atkMode',
   'attacker.battleAtk',
-  'attacker.characterAtk',
-  'attacker.addSupportAtk',
+  'attacker.troopAtk',
   'attacker.supportAtk',
   'attacker.ownDef',
   'attacker.tau.weak',
@@ -78,11 +76,10 @@ export interface Attacker {
   attackType: AttackType;
   atkMode: AtkMode;
   battleAtk: number;
-  characterAtk: number;
+  /** Pre-battle mode: the ATK under the character on the troop screen (Status Attributes). */
+  troopAtk: number;
   /** Support character's ATK from its own character page (Synergy partner). */
   supportAtk: number;
-  /** Pre-battle mode: add the support character's ATK to the character ATK. */
-  addSupportAtk: boolean;
   /** Own DEF, only used by Aegis. */
   ownDef: number;
   /** Optional ATKs of the two other qualifying combo attackers; not attached supports. */
@@ -100,13 +97,10 @@ export interface Attack {
   variant: SoulVariant;
   /**
    * Ultimate Soul of Combos “greatly increases damage to weak attributes”: added to the
-   * attribute multiplier on a natural advantage. The supplied global fallback is
-   * 140%; a positive character-specific resolved input can replace it.
+   * attribute multiplier on a natural advantage, in % (default 40). null while the field is emptied.
    */
   ultimateBonus: number | null;
   target: TargetType;
-  /** Position in the orb chain; only normal orbs get the chain bonus. */
-  comboPosition: ComboPosition;
   /** Native finisher factor (1, 1.1, 1.5, 2); the displayed chain BONUS is not this value. */
   comboMultiplier?: number;
   matchup: MatchupChoice;
@@ -164,7 +158,6 @@ export interface Workspace {
 
 export const EFFECT_TYPE_IDS = [
   'atkPct',
-  'atkFlat',
   'typeAtk',
   'elementAtk',
   'targetAtk',

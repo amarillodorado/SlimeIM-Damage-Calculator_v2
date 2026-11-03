@@ -50,7 +50,7 @@ describe('shared resolved attribute factor', () => {
     expect(calculateHit(input).damage).toBe(15600);
   });
 
-  it('does not add an Ultimate bonus to an ordinary orb or a neutral secret attack', () => {
+  it('does not add an Ultimate bonus to an ordinary soul or a neutral secret attack', () => {
     const { input } = setup();
     input.attack.kind = 'soul';
     input.attack.ultimateBonus = null;
@@ -77,30 +77,32 @@ describe('shared resolved attribute factor', () => {
   });
 });
 
-describe('unknown Ultimate addition state', () => {
-  it('starts genuinely unknown and remains required after confirming without a value', () => {
-    expect(defaultWorkspace().hits[0]!.attack.ultimateBonus).toBeNull();
-    const { ws, hit } = setup(true, 'ultimate', null);
+describe('Ultimate addition default', () => {
+  it('starts at 40% but still has to be confirmed; an emptied field stays required', () => {
+    expect(defaultWorkspace().hits[0]!.attack.ultimateBonus).toBe(40);
+    const { ws, hit } = setup();
     for (const requirement of getRequirements(hit, ws.enemy)) {
+      if (requirement.key === 'attack.ultimateBonus') continue;
       const owner = requirement.key.startsWith('enemy.') ? ws.enemy : hit;
       owner.confirmed = { ...owner.confirmed, [requirement.key]: true };
     }
     expect(getMissingRequirements(hit, ws.enemy).map((row) => row.key)).toEqual(['attack.ultimateBonus']);
-    expect(isHitComplete(hit, ws.enemy)).toBe(false);
-    hit.attack.ultimateBonus = 40;
+    hit.confirmed = { ...hit.confirmed, 'attack.ultimateBonus': true };
     expect(isHitComplete(hit, ws.enemy)).toBe(true);
+    hit.attack.ultimateBonus = null;
+    expect(isHitComplete(hit, ws.enemy)).toBe(false);
   });
 
-  it.each([40, 140])('preserves an explicit saved addition of%d', (bonus) => {
+  it.each([40, 30])('preserves an explicit saved addition of %d', (bonus) => {
     const { ws } = setup(true, 'ultimate', bonus);
     expect(normalizeWorkspace(JSON.parse(JSON.stringify(ws))).hits[0]!.attack.ultimateBonus).toBe(bonus);
   });
 
-  it('preserves null and does not invent a value for missing or invalid imported input', () => {
+  it('fills the 40% default for missing, empty or invalid saved input', () => {
     const { ws } = setup(true, 'ultimate', null);
-    expect(normalizeWorkspace(JSON.parse(JSON.stringify(ws))).hits[0]!.attack.ultimateBonus).toBeNull();
+    expect(normalizeWorkspace(JSON.parse(JSON.stringify(ws))).hits[0]!.attack.ultimateBonus).toBe(40);
     const raw = { ...ws, hits: [{ ...ws.hits[0], attack: { ...ws.hits[0]!.attack, ultimateBonus: undefined } }] };
-    expect(normalizeWorkspace(raw).hits[0]!.attack.ultimateBonus).toBeNull();
-    expect(normalizeWorkspace({ ...raw, hits: [{ attack: { ultimateBonus: 'unknown' } }] }).hits[0]!.attack.ultimateBonus).toBeNull();
+    expect(normalizeWorkspace(raw).hits[0]!.attack.ultimateBonus).toBe(40);
+    expect(normalizeWorkspace({ ...raw, hits: [{ attack: { ultimateBonus: 'unknown' } }] }).hits[0]!.attack.ultimateBonus).toBe(40);
   });
 });

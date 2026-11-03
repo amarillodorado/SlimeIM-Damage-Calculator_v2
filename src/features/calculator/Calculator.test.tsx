@@ -87,7 +87,7 @@ describe('clean calculator workspace', () => {
     renderCalculator(ordinaryInput());
     await user.click(screen.getByRole('button', { name: /Add a hit \(copy/ }));
     expect(screen.getAllByRole('tab')).toHaveLength(2);
-    await user.click(within(screen.getByRole('radiogroup', { name: 'Combo finisher' })).getByRole('radio', { name: /100%/ }));
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Soul Combos' })).getByRole('radio', { name: /100%/ }));
     expect(screen.getByText('Total of 2 hits')).toBeInTheDocument();
     expect(screen.getByText('6,000')).toBeInTheDocument();
   });
@@ -122,17 +122,23 @@ describe('clean calculator workspace', () => {
 });
 
 describe('generic guide', () => {
-  it('explains both ATK modes and candidate-roll limits without loading examples', () => {
+  it('explains both ways to collect values, both ATK modes and candidate-roll limits without loading examples', () => {
     render(
       <WorkspaceProvider>
         <GuidePage />
       </WorkspaceProvider>,
     );
+    expect(screen.getByRole('heading', { name: 'Two ways to collect the values' })).toBeInTheDocument();
+    expect(screen.getByText('A · From the battle screens')).toBeInTheDocument();
+    expect(screen.getByText('B · From the pre-battle screens')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'What the battle screens never show' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'ATK: two ways to enter it' })).toBeInTheDocument();
     expect(screen.getByText('A · Battle ATK')).toBeInTheDocument();
     expect(screen.getByText('B · Estimated pre-battle ATK')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Special hits: Critical, Pierce, Synergy, Aegis' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Checking a recorded hit' })).toBeInTheDocument();
+    // The worked example is explanation only: nothing can be loaded into the calculator from the guide.
     expect(screen.queryByText(/Load runs|Load run 4/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Milim/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /load|example/i })).not.toBeInTheDocument();
   });
 });

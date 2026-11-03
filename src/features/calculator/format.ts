@@ -18,7 +18,6 @@ export function hitTags(hit: Hit): string[] {
   if (k.pierce !== 'off') tags.push(k.pierce === 'super' ? 'Super Pierce' : 'Pierce');
   if (k.synergy !== 'off') tags.push(k.synergy === 'super' ? 'Super Synergy' : 'Synergy');
   if (k.aegis !== 'off') tags.push(k.aegis === 'super' ? 'Super Aegis' : 'Aegis');
-  if (k.kind === 'soul' && k.comboPosition > 1) tags.push(`Orb ${k.comboPosition}`);
   return tags;
 }
 
@@ -28,7 +27,7 @@ export function attackLabel(hit: Hit): string {
     const v = k.variant === 'ex' ? 'EX ' : k.variant === 'ultimate' ? 'Ultimate ' : '';
     return `${v}Soul of Combos ${k.power}%`;
   }
-  return `Normal orb ${k.power}%`;
+  return `Normal soul ${k.power}%`;
 }
 
 /** Plain-text summary for Discord and chats. */

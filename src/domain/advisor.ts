@@ -3,7 +3,7 @@ import { EFFECT_TYPES } from './effects';
 import type { EffectTypeId } from './types';
 
 /** Compare every modeled percentage effect whose condition the hit meets. */
-const CANDIDATES: EffectTypeId[] = EFFECT_TYPES.filter((effect) => effect.category !== 'noEffect' && !effect.flat).map((effect) => effect.id);
+const CANDIDATES: EffectTypeId[] = EFFECT_TYPES.filter((effect) => effect.category !== 'noEffect').map((effect) => effect.id);
 
 export const ADVISOR_STEP = 10;
 
@@ -17,8 +17,7 @@ export function bestNextEffects(input: HitInput, current: number, limit = 6): Ad
   const rows: AdvisorRow[] = [];
   for (const type of CANDIDATES) {
     if (!effectApplies(type, input).applies) continue;
-    // A new buff is a new entry. Keep existing signed entries intact for Super
-    // hits and keep ATK entries separate for their individual stat rounding.
+    // A new buff is a new entry. Keep existing signed entries intact for Super hits.
     const entries = input.effectEntries?.[type] ?? [input.effects[type] ?? 0];
     let next: number;
     try {

@@ -3,7 +3,6 @@ import {
   INPUT_KEYS,
   type Attack,
   type Attacker,
-  type ComboPosition,
   type Enemy,
   type Hit,
   type InputConfirmations,
@@ -112,8 +111,6 @@ export function workspaceReducer(state: Workspace, action: WorkspaceAction): Wor
               id: newId(),
               observed: 0,
               confirmed: { ...active.confirmed, 'attack.comboMultiplier': false, 'attacker.comboBuddyAtk1': false, 'attacker.comboBuddyAtk2': false },
-              // The next orb in a chain usually sits one position further.
-              attack: { ...active.attack, comboPosition: Math.min(6, active.attack.comboPosition + 1) as ComboPosition },
             };
       return { ...state, hits: [...state.hits, hit], activeHitId: hit.id };
     }

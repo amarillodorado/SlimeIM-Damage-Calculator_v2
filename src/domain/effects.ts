@@ -25,7 +25,6 @@ export interface EffectType {
   /** Effect only counts for one attribute: of the attacker or of the enemy. */
   attribute?: 'attacker' | 'enemy';
   confidence: Confidence;
-  flat?: boolean;
   /** Rare: the calculator hides the field until “All types” is opened, unless it has a value. */
   advanced?: boolean;
 }
@@ -36,7 +35,7 @@ export const CATEGORY_LABEL: Record<EffectCategory, string> = {
   enemy: 'Enemy defense',
   late: 'Late bonus (added together)',
   special: 'Critical, Pierce, Synergy, Aegis',
-  hit: 'Weak points and orb chain',
+  hit: 'Weak points and soul chain',
   stat: 'ATK stat (pre-battle mode only)',
   noEffect: "Doesn't change your damage",
 };
@@ -48,7 +47,7 @@ export const CATEGORY_PLACE: Record<EffectCategory, string> = {
   enemy: 'Step 4 · Buffs & debuffs → Enemy defense',
   late: 'Step 4 · Buffs & debuffs → Late bonus (under “All types”)',
   special: 'Step 2 · Attack → right under Critical, Pierce, Synergy or Aegis',
-  hit: 'Step 2 · Attack → under the popup or the orb position',
+  hit: 'Step 2 · Attack → under the special hit, popup or Soul Combos',
   stat: 'Step 1 · Attacker → Pre-battle ATK',
   noEffect: 'Nowhere — skip it',
 };
@@ -77,18 +76,18 @@ export const EFFECT_TYPES: EffectType[] = [
     id: 'soulDmg',
     category: 'damage',
     label: 'Soul of Combos damage UP',
-    examples: ['Increases damage by 40% (Forever) — effect list of the Soul of Combos card', 'Increases Soul of Combos damage until the end of battle by 10%'],
-    where: 'Tap the Soul of Combos card in the orb bar; battle skills (e.g. Omniscient Order)',
+    examples: ['Increases damage by 40% (Forever) — effect list of the Soul of Combos', 'Increases Soul of Combos damage until the end of battle by 10%'],
+    where: 'Tap the Soul of Combos in the soul bar; battle skills (e.g. Omniscient Order)',
     effect: 'Only for Soul of Combos hits. All values add up, then multiply: +40% → ×1.4.',
     confidence: 'verified',
   },
   {
     id: 'soulsDmg',
     category: 'damage',
-    label: 'Orb (soul) damage UP',
+    label: 'Soul damage UP',
     examples: ["Increases Octagram Demon Lord Force character souls' damage by 15%"],
     where: 'Battle skills',
-    effect: 'Counted for every orb of those characters and added to Soul of Combos damage UP. Assumption: the game groups it like card damage.',
+    effect: 'Counted for every soul of those characters and added to Soul of Combos damage UP. Assumption: it shares the Soul of Combos damage group.',
     confidence: 'assumed',
     advanced: true,
   },
@@ -174,7 +173,7 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Combo damage UP',
     examples: ['Combo damage UP'],
     where: 'Skills, traits',
-    effect: 'Adds to an eligible ordinary-orb finisher factor above 100%. It does not affect a 1–3-card chain or a non-finisher. Enter it separately from the base 110%/150%/200% finisher factor.',
+    effect: 'Adds to an eligible ordinary-soul finisher factor above 100%. It does not affect a 1–3-soul chain or a non-finisher. Enter it separately from the base 110%/150%/200% finisher factor.',
     confidence: 'client',
   },
   {
@@ -318,27 +317,17 @@ export const EFFECT_TYPES: EffectType[] = [
   {
     id: 'atkPct',
     category: 'stat',
-    label: 'Increased ATK % (each source)',
+    label: 'Increased ATK %',
     examples: [
-      'Increased ATK by 50% (Forever)',
+      'Increased ATK by 92% (Forever)',
       'Increased ATK by 6% (Trait)',
       "Divine Protection: increases magic characters' ATK and DEF by 25%",
-      'When equipped by a space character, increases ATK by 10%',
+      'Protection skill: increases ATK for all allies including rearguard until the end of battle by 14%',
     ],
-    where: 'Battle effect list, Divine Protection, traits, equipment',
+    where: 'Battle effect list (one line, already added up); before the battle: Divine Protection, supporting protections, protection skills, traits',
     effect:
-      'Raises the ATK stat. Keep each independent percentage source as a separate entry because each is rounded up separately. Already included in Battle ATK; used only in estimated pre-battle mode.',
+      'Raises the ATK stat. Enter every “Increased ATK by X%” the character has in battle, added up — the troop ATK contains none of them, not even the Divine Protection’s. E.g. 25% + 14% + 11% from the protections + 3 × 14% from the protection skill = 92%. The game adds them up and rounds the ATK up once. Equipment and EX abilities are already in the troop ATK. Already included in the Battle ATK, so it only counts in pre-battle mode.',
     confidence: 'verified',
-  },
-  {
-    id: 'atkFlat',
-    category: 'stat',
-    label: 'Increased ATK (flat)',
-    examples: ['Increases ATK by 190 (EX ability Magic Mercy)'],
-    where: 'EX abilities',
-    effect: 'Adds flat ATK separately from the percentage deltas in estimated pre-battle mode. Does not enlarge the estimated percentage base.',
-    confidence: 'assumed',
-    flat: true,
   },
 
   // ---------- Enemy debuffs ----------

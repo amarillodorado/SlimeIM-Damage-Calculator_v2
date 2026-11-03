@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { ATTRIBUTE_LABEL } from '../../domain/attributes';
 import { newId } from '../../domain/defaults';
 import { EFFECT_BY_ID, EFFECT_TYPES } from '../../domain/effects';
@@ -6,6 +6,8 @@ import { calculateHit, toInput } from '../../domain/engine';
 import { comparisonRequirements } from '../../domain/comparisonRequirements';
 import { getMissingRequirements } from '../../domain/requirements';
 import { normalizeUnits } from '../../domain/normalize';
+import { exportProviderFile, mergeProviders, parseProviderFile } from '../../domain/providerFiles';
+import { MAX_PROVIDERS, MAX_PROVIDER_COST, MAX_PROVIDER_EFFECTS, MAX_PROVIDER_EFFECT_VALUE, MAX_PROVIDER_FILE_BYTES, MAX_PROVIDER_NAME } from '../../domain/providerLimits';
 import { countCombinations, MAX_COMBINATIONS, rankTeams, type SupportUnit, type UnitEffect, type UnitTriggers } from '../../domain/teams';
 import { ATTRIBUTES, type AttributeFilter, type EffectTypeId } from '../../domain/types';
 import { hrefFor } from '../../app/router';
@@ -133,19 +135,19 @@ function UnitEditor({ unit, onSave, onClose }: { unit: SupportUnit | null; onSav
       {draft && (
         <div className={css.column}>
           <div className={ui.grid}>
-            <Field label="Name">{(id) => <TextInput id={id} value={draft.name} placeholder="e.g. Shion (Summer)" onChange={(name) => set({ name })} />}</Field>
-            <Field label="Skill cost">{(id) => <NumberInput id={id} value={draft.skillCost} suffix="SP" onChange={(skillCost) => set({ skillCost })} />}</Field>
+            <Field label="Name">{(id) => <TextInput id={id} value={draft.name} maxLength={MAX_PROVIDER_NAME} placeholder="e.g. Shion (Summer)" onChange={(name) => set({ name })} />}</Field>
+            <Field label="Skill cost" note="Total SP cost of the skills represented by this provider’s effects.">{(id) => <NumberInput id={id} value={draft.skillCost} max={MAX_PROVIDER_COST} suffix="SP" onChange={(skillCost) => set({ skillCost })} />}</Field>
           </div>
-          <h3 className={ui.groupTitle}>Effects this provider gives</h3>
+          <h3 className={ui.groupTitle}>Effects to use together</h3>
           <p className={ui.note}>
-            Copy each effect separately, including its attack-type, target and attribute restrictions. Only enter effects that can be active together on this
-            hit.
+            Enter the buffs and enemy debuffs you plan to use together from this provider, and their total skill cost above. Copy each effect separately,
+            including its attack-type, target and attribute restrictions. Only applicable effects are added to the fixed attack.
           </p>
           <ul className={css.editorList}>
             {draft.effects.map((e, i) => (
               <li key={i} className={css.editorRow}>
                 <Select<EffectTypeId> ariaLabel="Effect type" value={e.type} options={TYPE_OPTIONS} onChange={(type) => setEffect(i, { type })} />
-                <NumberInput ariaLabel="Value" value={e.value} allowNegative suffix="%" onChange={(value) => setEffect(i, { value })} />
+                <NumberInput ariaLabel="Value" value={e.value} decimal min={-MAX_PROVIDER_EFFECT_VALUE} max={MAX_PROVIDER_EFFECT_VALUE} allowNegative suffix="%" onChange={(value) => setEffect(i, { value })} />
                 <button
                   type="button"
                   className={ui.iconButton}
@@ -177,9 +179,10 @@ function UnitEditor({ unit, onSave, onClose }: { unit: SupportUnit | null; onSav
               </li>
             ))}
           </ul>
-          <button type="button" className={ui.button} onClick={() => set({ effects: [...draft.effects, { type: 'soulDmg', value: 0, attribute: 'any' }] })}>
+          <button type="button" className={ui.button} disabled={draft.effects.length >= MAX_PROVIDER_EFFECTS} onClick={() => set({ effects: [...draft.effects, { type: 'soulDmg', value: 0, attribute: 'any' }] })}>
             <Icon name="plus" /> Add effect
           </button>
+          {draft.effects.length >= MAX_PROVIDER_EFFECTS && <p className={ui.note}>A provider can contain up to {MAX_PROVIDER_EFFECTS} effects.</p>}
           <h3 className={ui.groupTitle}>Special-hit outcomes for this hit</h3>
           <p className={ui.note}>Enable an outcome only if this provider guarantees it under the selected conditions. Proc chances are not simulated.</p>
           <div className={ui.grid}>
@@ -196,7 +199,7 @@ function UnitEditor({ unit, onSave, onClose }: { unit: SupportUnit | null; onSav
 export default function TeamsPage() {
   const { workspace, activeHit } = useWorkspace();
   const { setAttacker, confirmInput } = useActiveHit();
-  const [pool, setPool] = usePersistentState<SupportUnit[]>(STORAGE_KEYS.units, () => [], normalizeUnits);
+  const [pool, setPool, providerSaveState] = usePersistentState<SupportUnit[]>(STORAGE_KEYS.units, () => [], normalizeUnits, { immediate: true });
   const [settings, setSettings] = usePersistentState<TeamSettings>(
     STORAGE_KEYS.teamSettings,
     () => ({ size: 3, maxCost: 0 }),
@@ -207,6 +210,59 @@ export default function TeamsPage() {
   );
   const [editing, setEditing] = useState<SupportUnit | null>(null);
   const [shown, setShown] = useState(PAGE);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [fileMessage, setFileMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
+
+  const importProviders = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+    setFileMessage(null);
+    if (file.size > MAX_PROVIDER_FILE_BYTES) {
+      setFileMessage({ kind: 'error', text: 'Choose a provider JSON file no larger than 1 MB.' });
+      return;
+    }
+    setIsImporting(true);
+    try {
+      const incoming = parseProviderFile(await file.text());
+      const imported = mergeProviders(pool, incoming);
+      if (imported.added || imported.updated) setPool(imported.providers);
+      setFileMessage({
+        kind: 'success',
+        text: `Import complete: ${imported.added} added, ${imported.updated} updated, ${imported.unchanged} unchanged.`,
+      });
+    } catch (error) {
+      setFileMessage({ kind: 'error', text: error instanceof Error ? error.message : 'Could not read this provider file. Try another JSON file.' });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const exportProviders = () => {
+    let url: string | undefined;
+    try {
+      const json = exportProviderFile(pool);
+      url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      const download = document.createElement('a');
+      download.href = url;
+      download.download = 'slimeim-buff-providers.json';
+      document.body.append(download);
+      try {
+        download.click();
+      } finally {
+        download.remove();
+      }
+      setFileMessage({ kind: 'success', text: `Exported ${pool.length} buff provider${pool.length === 1 ? '' : 's'}.` });
+    } catch (error) {
+      setFileMessage({ kind: 'error', text: error instanceof Error ? error.message : 'Could not export providers. Please try again.' });
+    } finally {
+      if (url) {
+        const exportedUrl = url;
+        window.setTimeout(() => URL.revokeObjectURL(exportedUrl), 1000);
+      }
+    }
+  };
 
   const base = useMemo(() => toInput(activeHit, workspace.enemy), [activeHit, workspace.enemy]);
   const baseMissing = useMemo(() => getMissingRequirements(activeHit, workspace.enemy), [activeHit, workspace.enemy]);
@@ -262,11 +318,11 @@ export default function TeamsPage() {
     <div className={css.page}>
       <div className={css.column}>
         <Card
-          title="Base hit"
-          subtitle="Compares buff combinations on the selected hit. It does not simulate a full battle, skill timing or proc probabilities."
+          title="Fixed attacker and enemy"
+          subtitle="Set up one attacker, one enemy and the selected soul attack in Calculator. Teams keeps that setup fixed and compares which buff-provider combination produces the most damage for that attack."
           actions={
             <a className={`${ui.button} ${ui.ghost}`} href={hrefFor('calculator')}>
-              <Icon name="edit" /> Edit
+              <Icon name="edit" /> Edit in Calculator
             </a>
           }
         >
@@ -274,6 +330,10 @@ export default function TeamsPage() {
             <b>{hitLabel(activeHit, index)}</b> · {attackLabel(activeHit)} vs. <b>{workspace.enemy.name || 'enemy'}</b> (DEF {fmtInt(workspace.enemy.def)})
             <br />
             Damage before added providers: <b>{baseDamage === null ? '—' : fmtInt(baseDamage)}</b>
+          </p>
+          <p className={ui.note}>
+            Effects entered in Calculator apply to every combination. Add only the extra provider effects below to avoid counting them twice. Results show
+            this attacker’s selected attack; the providers’ own attacks are not included.
           </p>
           {baseCalculation.error && (
             <p role="alert" className={ui.note}>
@@ -320,13 +380,35 @@ export default function TeamsPage() {
           )}
         </Card>
 
-        <Card title="Buff providers" subtitle="Choose characters whose skills can affect this hit, or enter their effects and restrictions yourself.">
+        <Card title="Buff providers" subtitle="Add all buff providers you want to compare. Teams tries different groups from this candidate pool to increase the fixed attacker’s damage.">
+          <div className={css.fileActions}>
+            <button type="button" className={ui.button} disabled={isImporting} onClick={() => fileInput.current?.click()}>
+              {isImporting ? 'Importing…' : 'Import providers'}
+            </button>
+            <button type="button" className={ui.button} disabled={pool.length === 0 || isImporting} onClick={exportProviders}>
+              <Icon name="arrowDown" /> Export providers
+            </button>
+            <input ref={fileInput} type="file" hidden accept=".json,application/json" aria-label="Import buff providers from JSON" onChange={importProviders} />
+          </div>
+          <p className={ui.note} role={providerSaveState === 'unavailable' ? 'alert' : 'status'}>
+            {providerSaveState === 'saved'
+              ? 'Saved automatically in this browser for this website address.'
+              : providerSaveState === 'unavailable'
+                ? 'Browser storage is unavailable. Export your providers to keep a backup before leaving this page.'
+                : 'Saving buff providers in this browser…'}
+          </p>
+          <p className={ui.note}>
+            Export a JSON backup to use your providers in another browser or at another website address. Import adds new providers and updates matching IDs;
+            other providers are kept.
+          </p>
+          {fileMessage && <p className={ui.note} role={fileMessage.kind === 'error' ? 'alert' : 'status'}>{fileMessage.text}</p>}
           <div className={css.presets}>
             {PRESET_UNITS.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 className={css.preset}
+                disabled={isImporting || (!inPool.has(p.id) && pool.length >= MAX_PROVIDERS)}
                 aria-pressed={inPool.has(p.id)}
                 aria-label={`${p.name}, ${p.skillCost} SP`}
                 onClick={() => toggle(p)}
@@ -344,13 +426,15 @@ export default function TeamsPage() {
           <button
             type="button"
             className={`${ui.button} ${ui.primary} ${ui.block}`}
+            disabled={isImporting || pool.length >= MAX_PROVIDERS}
             onClick={() => setEditing({ id: newId(), name: '', skillCost: 80, effects: [{ type: 'soulDmg', value: 0, attribute: 'any' }], triggers: {} })}
           >
             <Icon name="plus" /> Create provider
           </button>
-          <h3 className={ui.groupTitle}>Pool ({pool.length})</h3>
+          <h3 className={ui.groupTitle}>Candidate providers ({pool.length})</h3>
+          {pool.length >= MAX_PROVIDERS && <p className={ui.note}>You can store up to {MAX_PROVIDERS} providers. Export a backup before removing entries to make room.</p>}
           {pool.length === 0 ? (
-            <p className={css.empty}>No buff providers yet.</p>
+            <p className={css.empty}>Choose a preset above or create a provider to add its effects and skill cost.</p>
           ) : (
             <ul className={css.pool}>
               {pool.map((u) => (
@@ -362,12 +446,13 @@ export default function TeamsPage() {
                     </span>
                     <UnitChips unit={u} />
                   </div>
-                  <button type="button" className={ui.iconButton} aria-label={`Edit ${u.name}`} onClick={() => setEditing(u)}>
+                  <button type="button" className={ui.iconButton} disabled={isImporting} aria-label={`Edit ${u.name}`} onClick={() => setEditing(u)}>
                     <Icon name="edit" />
                   </button>
                   <button
                     type="button"
                     className={ui.iconButton}
+                    disabled={isImporting}
                     aria-label={`Remove ${u.name}`}
                     onClick={() => setPool((p) => p.filter((x) => x.id !== u.id))}
                   >
@@ -380,6 +465,13 @@ export default function TeamsPage() {
         </Card>
 
         <Card title="Combination rules">
+          <p className={ui.note} aria-live="polite" aria-atomic="true">
+            Compare combinations of exactly {settings.size} buff {settings.size === 1 ? 'provider' : 'providers'}
+            {settings.maxCost > 0 ? ` costing at most ${fmtInt(settings.maxCost)} SP in total.` : ' with no skill-point limit.'}
+          </p>
+          <p className={ui.note}>
+            Each provider contributes its applicable entered effects once to the fixed attack, and combinations are ranked by damage.
+          </p>
           <div className={ui.grid}>
             <Field label="Providers per combination" group>
               {() => (
@@ -391,7 +483,7 @@ export default function TeamsPage() {
                 />
               )}
             </Field>
-            <Field label="Skill point limit" note="0 = no limit">
+            <Field label="Skill point limit" note="Maximum total cost of the added providers. 0 = no limit.">
               {(id) => <NumberInput id={id} value={settings.maxCost} suffix="SP" onChange={(maxCost) => setSettings((s) => ({ ...s, maxCost }))} />}
             </Field>
           </div>
@@ -410,7 +502,7 @@ export default function TeamsPage() {
                   ? `${fmtInt(total)} combinations is too many — remove providers or choose a smaller combination.`
                   : pool.length < settings.size
                     ? `Add at least ${settings.size} providers to the pool.`
-                    : `${fmtInt(results.length)} of ${fmtInt(total)} combinations fit the rules. Rankings assume all entered effects are valid and active together.`
+                    : `${fmtInt(results.length)} of ${fmtInt(total)} combinations fit the rules. Highest calculated damage first; lower skill cost breaks ties. All effects must be valid and active together.`
           }
         >
           {ranking.error && (

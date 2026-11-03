@@ -22,7 +22,8 @@ export function EffectField({ type }: { type: EffectTypeId }) {
     (hit.attack.pierce === 'super' && ['piercePower', 'pierceResDown'].includes(type)) ||
     (hit.attack.synergy === 'super' && ['synergyPower', 'synergyResDown'].includes(type)) ||
     (hit.attack.aegis === 'super' && ['aegisPower', 'aegisResDown'].includes(type));
-  const separate = type === 'atkPct' || superType || (hit.effectEntries?.[type]?.length ?? 0) > 1;
+  // One field with the total per type; only Super hits need separate UP and DOWN rows.
+  const separate = superType;
   const entries = hit.effectEntries?.[type] ?? [hit.effects[type] ?? 0];
   return (
     <Field
@@ -30,11 +31,7 @@ export function EffectField({ type }: { type: EffectTypeId }) {
       group={separate}
       info={{ label, game: t.examples, where: t.where, use: t.effect, confidence: t.confidence }}
       note={
-        separate
-          ? type === 'atkPct'
-            ? 'One row per independent ATK effect. Each row is rounded separately.'
-            : 'Keep simultaneous UP and DOWN effects in separate rows. For resistance DOWN fields, enter resistance UP as a negative value.'
-          : undefined
+        separate ? 'Keep simultaneous UP and DOWN effects in separate rows. For resistance DOWN fields, enter resistance UP as a negative value.' : undefined
       }
     >
       {(id) =>
@@ -85,7 +82,7 @@ export function EffectField({ type }: { type: EffectTypeId }) {
             min={-100000}
             max={100000}
             value={hit.effects[type] ?? 0}
-            suffix={t.flat ? undefined : '%'}
+            suffix="%"
             onChange={(value) => setEffect(type, value)}
           />
         )

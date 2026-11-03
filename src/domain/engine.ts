@@ -101,7 +101,6 @@ export function effectApplies(type: EffectTypeId, input: HitInput): Applicabilit
   const soc = k.kind === 'soulOfCombos';
   switch (type) {
     case 'atkPct':
-    case 'atkFlat':
       return a.atkMode === 'battle' ? { applies: false, reason: 'Already in the battle ATK' } : { applies: true };
     case 'soulDmg':
     case 'soulDmgResDown':
@@ -131,8 +130,8 @@ export function effectApplies(type: EffectTypeId, input: HitInput): Applicabilit
     case 'superWeakDmg':
       return k.popup === 'superWeak' ? { applies: true } : { applies: false, reason: 'Needs a Super Weak Point popup' };
     case 'comboDmg':
-      if (k.kind !== 'soul') return { applies: false, reason: 'Normal orbs only' };
-      return (k.comboMultiplier ?? 1) > 1 ? { applies: true } : { applies: false, reason: 'Needs an eligible combo finisher above 100%' };
+      if (k.kind !== 'soul') return { applies: false, reason: 'Normal souls only' };
+      return (k.comboMultiplier ?? 1) > 1 ? { applies: true } : { applies: false, reason: 'Needs an eligible soul finisher above 100%' };
     default:
       return { applies: true };
   }
@@ -241,22 +240,22 @@ export function computeHit(input: HitInput, roll: number = ROLL_MID, trace = fal
     battleAtk = maxD(0, a.battleAtk);
     if (trace) stats.push({ id: 'atk', label: 'Battle ATK', detail: 'from the battle info panel (includes active ATK buffs)', value: battleAtk.toNumber() });
   } else {
-    // The pre-battle/support reconstruction is an estimate of the original base.
-    // Keep each percentage source separate and add flat deltas after ratios.
-    preBattleAtk = maxD(0, D(a.characterAtk).add(a.addSupportAtk ? a.supportAtk : 0));
-    const atkBonus = sourceEntries(input, 'atkPct').reduce((sum, value) => sum.add(preBattleAtk!.mul(D(value).div(100)).ceil()), ZERO);
-    battleAtk = maxD(0, preBattleAtk.add(atkBonus).add(t('atkFlat')));
+    // The troop screen ATK already holds the character, its support, equipment and EX abilities.
+    // The battle adds all “Increased ATK” % together and rounds up once: 14,689 + 92% = 28,203 and
+    // 14,689 + 70% = 24,972 fit only that way; rounding each % separately fits no base.
+    preBattleAtk = maxD(0, a.troopAtk);
+    battleAtk = maxD(0, preBattleAtk.add(preBattleAtk.mul(t('atkPct').div(100)).ceil()));
     if (trace) {
       stats.push({
         id: 'preAtk',
-        label: 'Estimated pre-battle ATK',
-        detail: 'character + selected support; original stat base may differ',
+        label: 'Troop ATK',
+        detail: 'from the troop screen',
         value: preBattleAtk.toNumber(),
       });
       stats.push({
         id: 'atk',
         label: 'Estimated battle ATK',
-        detail: 'each ATK % entry rounded up separately; flat additions applied afterward',
+        detail: 'plus the Increased ATK %, rounded up',
         value: battleAtk.toNumber(),
       });
     }
@@ -334,7 +333,7 @@ export function computeHit(input: HitInput, roll: number = ROLL_MID, trace = fal
   const combo = soc ? ONE : maxD(0, comboBase.add(comboBase.compare(1) > 0 ? t('comboDmg').div(100) : ZERO));
   d = d.mul(combo);
   if (combo.compare(1))
-    push('combo', `Combo bonus (orb ${k.comboPosition})`, `entered base ${comboBase.mul(100).toString()}% + separately entered eligible combo damage`, combo);
+    push('combo', 'Soul Combos', `entered base ${comboBase.mul(100).toString()}% + separately entered eligible combo damage`, combo);
   if (k.crit) {
     const crit = regularDecimalRate(CRIT_BASE, t('critDmg'), t('critResDown'));
     d = d.mul(crit);
@@ -356,10 +355,10 @@ export function computeHit(input: HitInput, roll: number = ROLL_MID, trace = fal
   const cardUp = (soc ? t('soulDmg') : ZERO).add(t('soulsDmg')).add(soc && k.variant === 'ultimate' ? t('ultimateSoulDmg') : ZERO);
   const card = plusD(cardUp);
   d = d.mul(card);
-  if (card.compare(1)) push('card', soc ? 'Soul of Combos damage UP' : 'Orb damage UP', `1 + ${cardUp.toString()}% (added together)`, card);
+  if (card.compare(1)) push('card', soc ? 'Soul of Combos damage UP' : 'Soul damage UP', `1 + ${cardUp.toString()}% (added together)`, card);
   const skill = D(k.power).div(100);
   d = d.mul(skill);
-  push('skill', soc ? 'Soul of Combos power' : 'Orb power', `${k.power}% from the selected card`, skill);
+  push('skill', soc ? 'Soul of Combos power' : 'Soul power', `${k.power}% from the selected soul`, skill);
 
   const specialRate = (power: EffectTypeId, resistance: EffectTypeId, superHit: boolean) =>
     superHit ? superDecimalRate(sourceEntries(input, power), sourceEntries(input, resistance)) : regularDecimalRate(1, t(power), t(resistance));

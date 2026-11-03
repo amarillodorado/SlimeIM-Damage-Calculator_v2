@@ -63,17 +63,16 @@ describe('bestNextEffects', () => {
     expect(current).toBe(1024000);
     expect(rows.find((row) => row.type === 'targetDmg')?.gain).toBeCloseTo(0.1, 10);
     expect(rows[0]!.gain).toBeGreaterThan(0.09);
-    expect(rows.map((row) => row.type)).not.toContain('atkFlat');
   });
-  it('compares a new ATK entry with per-entry rounding in build mode', () => {
+  it('adds a new ATK % to the existing one in build mode, rounded up once', () => {
     const input = neutralHit();
-    input.attacker = { ...input.attacker, atkMode: 'build', characterAtk: 1001, addSupportAtk: false };
+    input.attacker = { ...input.attacker, atkMode: 'build', troopAtk: 1001 };
     input.enemy.def = 0;
     input.effects = { atkPct: 10 };
     input.effectEntries = { atkPct: [10] };
     const rows = bestNextEffects(input, damageAt(input), 100);
     const atk = rows.find((row) => row.type === 'atkPct');
-    expect(atk?.gain).toBeCloseTo(482 / 441 - 1, 10);
+    expect(atk?.gain).toBeCloseTo(481 / 441 - 1, 10);
     expect(input.effectEntries.atkPct).toEqual([10]);
   });
 });
@@ -162,6 +161,17 @@ describe('teams', () => {
 });
 
 describe('normalize', () => {
+  it('restores full provider names and repairs duplicate provider IDs without losing their effects', () => {
+    const name = 'A'.repeat(60);
+    const providers = normalizeUnits([
+      { id: 'same', name, skillCost: 40, effects: [{ type: 'piercePower', value: -12.5, attribute: 'any', attackType: 'magic', target: 'single' }] },
+      { id: 'same', name: 'Other provider', skillCost: 80, effects: [] },
+    ]);
+    expect(providers).toHaveLength(2);
+    expect(providers[0]!.name).toBe(name);
+    expect(providers[0]!.effects[0]).toEqual({ type: 'piercePower', value: -12.5, attribute: 'any', attackType: 'magic', target: 'single' });
+    expect(providers[0]!.id).not.toBe(providers[1]!.id);
+  });
   it('returns a clean empty workspace for invalid input', () => {
     expect(normalizeWorkspace(null).hits).toHaveLength(1);
     expect(normalizeWorkspace({ hits: [] }).enemy.name).toBe('');
@@ -185,7 +195,7 @@ describe('normalize', () => {
     expect(ws.enemy.attribute).toBe('wind');
     expect(ws.enemy.magicRes).toBe(-20);
     expect(ws.hits[0]!.attacker.battleAtk).toBe(0);
-    expect(ws.hits[0]!.attack.comboPosition).toBe(1);
+    expect(ws.hits[0]!.attack).not.toHaveProperty('comboPosition');
     expect(ws.hits[0]!.attack.popup).toBe('superWeak');
     expect(ws.hits[0]!.effects).toEqual({ soulDmg: 40 });
     expect(ws.hits[0]!.id).not.toBe(ws.hits[1]!.id);
@@ -210,7 +220,7 @@ describe('normalize', () => {
     });
     expect(ws.hits[0]!.effects).toEqual({ critDmg: 52, vsAttribute: 106 });
   });
-  it('turns the removed battle-skill hit type into a normal orb', () => {
+  it('turns the removed battle-skill hit type into a normal soul', () => {
     const ws = normalizeWorkspace({ hits: [{ attack: { kind: 'skill', power: 300 } }] });
     expect(ws.hits[0]!.attack.kind).toBe('soul');
     expect(ws.hits[0]!.attack.power).toBe(300);

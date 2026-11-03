@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 // Storage can be missing or throw (private mode, blocked site data); the app works without it.
 export function loadJSON(key: string): unknown {
@@ -10,27 +10,41 @@ export function loadJSON(key: string): unknown {
   }
 }
 
-export function saveJSON(key: string, value: unknown): void {
+export function saveJSON(key: string, value: unknown): boolean {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined) return false;
+    localStorage.setItem(key, serialized);
+    return true;
   } catch {
-    /* storage unavailable or full */
+    return false;
   }
 }
 
-/** useState that is restored from and (debounced) saved to localStorage. */
-export function usePersistentState<T>(key: string, init: () => T, normalize: (raw: unknown) => T) {
+export type SaveState = 'saving' | 'saved' | 'unavailable';
+
+/** Restore browser state; immediate mode saves each commit before navigation can unmount it. */
+export function usePersistentState<T>(key: string, init: () => T, normalize: (raw: unknown) => T, options?: { immediate?: boolean }) {
   const [value, setValue] = useState<T>(() => {
     const raw = loadJSON(key);
     return raw === undefined ? init() : normalize(raw);
   });
+  const [saveState, setSaveState] = useState<SaveState>('saving');
+  const immediate = options?.immediate === true;
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useLayoutEffect(() => {
+    if (immediate) setSaveState(saveJSON(key, value) ? 'saved' : 'unavailable');
+  }, [key, value, immediate]);
+
   useEffect(() => {
+    if (immediate) return;
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => saveJSON(key, value), 250);
+    setSaveState('saving');
+    timer.current = setTimeout(() => setSaveState(saveJSON(key, value) ? 'saved' : 'unavailable'), 250);
     return () => clearTimeout(timer.current);
-  }, [key, value]);
-  return [value, setValue] as const;
+  }, [key, value, immediate]);
+  return [value, setValue, saveState] as const;
 }
 
 export const STORAGE_KEYS = {

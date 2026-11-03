@@ -37,12 +37,12 @@ beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 
 describe('required-input guidance', () => {
-  it('keeps an unknown Ultimate addition blank and previews the actual factor after entry', async () => {
+  it('starts the Ultimate addition at 40%, previews the factor and recalculates after a change', async () => {
     const ws = completeOrb(),
       hit = ws.hits[0]!;
     hit.attacker = { ...hit.attacker, attribute: 'dark', plus: true };
     ws.enemy.attribute = 'light';
-    hit.attack = { ...hit.attack, kind: 'soulOfCombos', power: 100, variant: 'ultimate', ultimateBonus: null };
+    hit.attack = { ...hit.attack, kind: 'soulOfCombos', power: 100, variant: 'ultimate' };
     for (const item of getRequirements(hit, ws.enemy)) {
       const owner = item.key.startsWith('enemy.') ? ws.enemy : hit;
       owner.confirmed = { ...owner.confirmed, [item.key]: true };
@@ -50,29 +50,25 @@ describe('required-input guidance', () => {
     const user = userEvent.setup();
     show(ws);
     const bonus = screen.getByLabelText('Ultimate bonus vs. weak attributes');
-    expect(bonus).toHaveValue(null);
-    expect(result()).toBe('—');
-    expect(screen.queryByRole('button', { name: 'Confirm Ultimate bonus vs. weak attributes' })).not.toBeInTheDocument();
-    await user.type(bonus, '40');
-    expect(screen.getByText('Resolved attribute factor: ×2')).toBeInTheDocument();
+    expect(bonus).toHaveValue(40);
+    expect(screen.getByText('= 1.5 + 0.1 (Dark+) + 0.4 (Ultimate) = ×2')).toBeInTheDocument();
     expect(result()).toBe('6,000');
     await user.clear(bonus);
-    await user.type(bonus, '140');
-    expect(screen.getByText('Resolved attribute factor: ×3')).toBeInTheDocument();
-    expect(result()).toBe('9,000');
-    await user.clear(bonus);
     expect(result()).toBe('—');
     expect(bonus).toHaveValue(null);
+    await user.type(bonus, '60');
+    expect(screen.getByText('= 1.5 + 0.1 (Dark+) + 0.6 (Ultimate) = ×2.2')).toBeInTheDocument();
+    expect(result()).toBe('6,600');
   });
 
-  it('shows the enhanced normal-orb advantage as 1.6 without an Ultimate input', () => {
+  it('shows the enhanced normal-soul advantage as 1.6 without an Ultimate input', () => {
     const ws = completeOrb(),
       hit = ws.hits[0]!;
     hit.attacker = { ...hit.attacker, attribute: 'dark', plus: true };
     ws.enemy.attribute = 'light';
     show(ws);
     expect(screen.getByLabelText('Base attribute matchup')).toBeInTheDocument();
-    expect(screen.getByText('Resolved attribute factor: ×1.6')).toBeInTheDocument();
+    expect(screen.getByText('= 1.5 + 0.1 (Dark+) = ×1.6')).toBeInTheDocument();
     expect(screen.queryByLabelText('Ultimate bonus vs. weak attributes')).not.toBeInTheDocument();
     expect(result()).toBe('4,800');
   });
@@ -84,10 +80,10 @@ describe('required-input guidance', () => {
     hit.confirmed = { ...hit.confirmed, 'attack.variant': true };
     const user = userEvent.setup();
     show(ws);
-    expect(screen.queryByRole('button', { name: 'Confirm Damage % on the card' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Confirm Damage % on the soul' })).not.toBeInTheDocument();
     expect(field('attack.power')).toHaveTextContent('above 0%');
     expect(result()).toBe('—');
-    await user.type(screen.getByLabelText('Damage % on the card'), '600');
+    await user.type(screen.getByLabelText('Damage % on the soul'), '600');
     expect(result()).toBe('18,000');
     expect(field('attack.power')).not.toHaveAttribute('data-required', 'true');
   });
@@ -100,9 +96,9 @@ describe('required-input guidance', () => {
     const user = userEvent.setup();
     show(ws);
     expect(result()).toBe('—');
-    await user.click(screen.getByRole('button', { name: 'Confirm Damage % on the card' }));
+    await user.click(screen.getByRole('button', { name: 'Confirm Damage % on the soul' }));
     expect(result()).toBe('18,000');
-    expect(screen.queryByRole('button', { name: 'Confirm Damage % on the card' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Confirm Damage % on the soul' })).not.toBeInTheDocument();
   });
 
   it('starts enabled, highlights unanswered choices, and accepts the already selected option', async () => {
@@ -156,10 +152,10 @@ describe('required-input guidance', () => {
     await user.selectOptions(screen.getByLabelText('Enemy attribute'), 'fire');
     await user.click(selected('Attack type', 'Magic'));
     await user.click(selected('How do you enter ATK?', /Battle ATK/));
-    await user.click(selected('Hit type', /Normal orb/));
+    await user.click(selected('Hit type', /Normal soul/));
     await user.click(selected('Target', 'Single'));
-    await user.click(selected('Combo finisher', /100%/));
-    await user.click(selected('Popup on the hit', 'None'));
+    await user.click(selected('Soul Combos', /100%/));
+    await user.click(selected('Weakness result', 'None'));
     for (const name of ['Critical', 'Pierce', 'Synergy', 'Aegis']) await user.click(selected(name, 'Off'));
     await user.click(selected('Enemy guard', 'No Guard'));
     await user.type(screen.getByLabelText('Battle ATK'), '10000');
@@ -194,7 +190,7 @@ describe('required-input guidance', () => {
     expect(result()).toBe('4,600');
   });
 
-  it('uses the normal-orb baseline after leaving a secret and removes Super Critical', async () => {
+  it('uses the normal-soul baseline after leaving a secret and removes Super Critical', async () => {
     const ws = completeOrb();
     const hit = ws.hits[0]!;
     hit.attack = { ...hit.attack, kind: 'soulOfCombos', power: 600 };
@@ -205,13 +201,13 @@ describe('required-input guidance', () => {
     const user = userEvent.setup();
     show(ws);
     expect(result()).toBe('18,000');
-    expect(screen.getByLabelText('Damage % on the card')).toHaveValue(600);
-    await user.click(selected('Hit type', /Normal orb/));
-    expect(screen.queryByLabelText('Damage % on the card')).not.toBeInTheDocument();
-    expect(screen.getByText(/Ordinary orb base power:/)).toHaveTextContent('100%');
-    await user.click(selected('Combo finisher', /100%/));
+    expect(screen.getByLabelText('Damage % on the soul')).toHaveValue(600);
+    await user.click(selected('Hit type', /Normal soul/));
+    expect(screen.queryByLabelText('Damage % on the soul')).not.toBeInTheDocument();
+    expect(screen.getByText(/Ordinary soul base power:/)).toHaveTextContent('100%');
+    await user.click(selected('Soul Combos', /100%/));
     // Changing the kind requires reconfirming its popup; choose the retained None.
-    await user.click(selected('Popup on the hit', 'None'));
+    await user.click(selected('Weakness result', 'None'));
     expect(result()).toBe('3,000');
     expect(within(screen.getByRole('radiogroup', { name: 'Critical' })).queryByRole('radio', { name: 'Super' })).not.toBeInTheDocument();
   });

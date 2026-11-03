@@ -1,7 +1,8 @@
 import { useMemo, type ReactNode } from 'react';
-import { chartMatchup, MATCHUP_LABEL } from '../../domain/attributes';
-import { ASSIST_SHARE, CRIT_BASE, getAttributeFactor, MATCHUP_BASE, PIERCE_ATK_SHARE, PLUS_ADVANTAGE_BONUS, toInput } from '../../domain/engine';
-import type { ComboPosition, HitKind, InputKey, MatchupChoice, Popup, Proc, SoulVariant, TargetType } from '../../domain/types';
+import { ATTRIBUTE_LABEL, chartMatchup, MATCHUP_LABEL } from '../../domain/attributes';
+import type { ClrDecimal } from '../../domain/decimal';
+import { getAttributeFactor, MATCHUP_BASE, PLUS_ADVANTAGE_BONUS, toInput, type AttributeFactor } from '../../domain/engine';
+import type { HitKind, InputKey, MatchupChoice, Popup, Proc, SoulVariant, TargetType } from '../../domain/types';
 import { Field } from '../../components/Field';
 import { NumberInput, Segmented, Select, Switch, type Option } from '../../components/inputs';
 import { Card } from '../../components/layout';
@@ -9,19 +10,18 @@ import ui from '../../components/ui.module.css';
 import { useWorkspace } from '../../state/workspaceContext';
 import css from './calculator.module.css';
 import { EffectField } from './EffectField';
-import { attackLabel, fmtInt, hitTags } from './format';
+import { attackLabel, hitTags } from './format';
 import { useActiveHit } from './useCalculator';
 
 const KIND_OPTIONS: Option<HitKind>[] = [
   { value: 'soulOfCombos', label: 'Soul of Combos', sub: 'secret skill' },
-  { value: 'soul', label: 'Normal orb', sub: 'every other orb' },
+  { value: 'soul', label: 'Normal soul', sub: 'every other soul' },
 ];
 const VARIANT_OPTIONS: Option<SoulVariant>[] = [
   { value: 'normal', label: 'Normal' },
   { value: 'ex', label: 'EX' },
   { value: 'ultimate', label: 'Ultimate' },
 ];
-const COMBO_OPTIONS: Option<ComboPosition>[] = ([1, 2, 3, 4, 5, 6] as const).map((position) => ({ value: position, label: String(position) }));
 const POPUP_OPTIONS: Option<Popup>[] = [
   { value: 'none', label: 'None' },
   { value: 'weak', label: 'Weak Point!' },
@@ -38,24 +38,20 @@ const critOptions: Option<Proc>[] = [
 ];
 const FINISHER_OPTIONS: Option<number>[] = [
   { value: 1, label: 'None', sub: '100%' },
-  { value: 1.1, label: '4 cards', sub: '110%' },
-  { value: 1.5, label: '5 cards', sub: '150%' },
-  { value: 2, label: '6 cards', sub: '200%' },
+  { value: 1.1, label: '4 souls', sub: '110%' },
+  { value: 1.5, label: '5 souls', sub: '150%' },
+  { value: 2, label: '6 souls', sub: '200%' },
 ];
-const pct = (share: number) => `${Math.round(share * 100)}%`;
-
-/** A special hit: its switch, what it does and — while it is on — the buffs that only count for it. */
+/** A special hit: its switch and — while it is on — the buffs that only count for it. How it works is in Guide → Popups & special hits. */
 function SpecialHit({
   inputKey,
   title,
-  description,
   control,
   active,
   children,
 }: {
   inputKey: InputKey;
   title: string;
-  description: string;
   control: ReactNode;
   active: boolean;
   children: ReactNode;
@@ -64,17 +60,29 @@ function SpecialHit({
     <Field inputKey={inputKey} label={title} group wide>
       {() => (
         <div className={`${css.special} ${active ? css.specialOn : ''}`}>
-          <div className={css.specialHead}>
-            <div className={css.specialText}>
-              <p className={css.explain}>{description}</p>
-            </div>
-            <div className={css.specialControl}>{control}</div>
-          </div>
+          <div className={css.specialControl}>{control}</div>
           {active && <div className={ui.grid}>{children}</div>}
         </div>
       )}
     </Field>
   );
+}
+
+const nonZero = (d: ClrDecimal) => d.compare(0) !== 0;
+const short = (d: ClrDecimal) => String(Number(d.toNumber().toFixed(4)));
+
+/** “= 1.5 + 0.1 (Dark+) + 0.4 (Ultimate) = ×2”: the resolved attribute factor in one line. */
+function attributeLine(f: AttributeFactor, attribute: string): string {
+  const parts: [ClrDecimal, string][] = [
+    [f.enhanced, `${attribute}+`],
+    [f.ultimate, 'Ultimate'],
+    [f.weak, 'Weakness Strike'],
+    [f.superWeak, 'Super Weakness Strike'],
+  ];
+  const added = parts.filter(([d]) => nonZero(d));
+  if (!added.length) return `= ×${short(f.factor)}`;
+  const terms = added.map(([d, label]) => (d.compare(0) < 0 ? `− ${short(d.neg())} (${label})` : `+ ${short(d)} (${label})`));
+  return `= ${short(f.base)} ${terms.join(' ')} = ×${short(f.factor)}`;
 }
 
 export function AttackCard() {
@@ -107,7 +115,7 @@ export function AttackCard() {
       id="attack"
       title="Attack"
       collapsible
-      subtitle="The orb you used, what popped up on the hit, and the buffs of each special hit."
+      subtitle="The soul you used, what popped up on the hit, and the buffs of each special hit."
       summary={[attackLabel(hit), ...hitTags(hit)].join(' · ')}
     >
       <Field help="kind" inputKey="attack.kind" group wide>
@@ -120,17 +128,13 @@ export function AttackCard() {
             help="variant"
             inputKey="attack.variant"
             group
-            note="Choose the version first. Enter the percentage shown on that version’s card below; this selection does not multiply it again. Changing versions clears the old percentage."
+            note="Choose the version first. Enter the percentage shown for that version below; this selection does not multiply it again. Changing versions clears the old percentage."
           >
             {() => <Segmented ariaLabel="Soul of Combos version" value={k.variant} options={VARIANT_OPTIONS} onChange={(variant) => setAttack({ variant })} />}
           </Field>
         )}
         {k.kind === 'soulOfCombos' && (
-          <Field
-            help="power"
-            inputKey="attack.power"
-            note="Type the actual selected card percentage, for example 600 for 600%. Valid entries are confirmed automatically."
-          >
+          <Field help="power" inputKey="attack.power">
             {(id) => (
               <NumberInput
                 id={id}
@@ -147,7 +151,7 @@ export function AttackCard() {
           <Field
             help="ultimateBonus"
             inputKey="attack.ultimateBonus"
-            note="Enter the resolved addition for this character: 40% means +0.4 in the attribute factor. The client’s 140% fallback is not a verified value for every character."
+            note="“Greatly increases damage to weak attributes”: 40% adds 0.4 to the attribute factor (see the = line below). Both recorded Ultimate hits on a weaker attribute matched 40%."
           >
             {(id) => (
               <NumberInput
@@ -155,7 +159,7 @@ export function AttackCard() {
                 decimal
                 allowNegative
                 value={k.ultimateBonus}
-                placeholder="Enter resolved bonus"
+                placeholder="e.g. 40"
                 suffix="%"
                 onChange={(ultimateBonus) => setAttack({ ultimateBonus })}
                 onEmpty={() => setAttack({ ultimateBonus: null })}
@@ -182,17 +186,17 @@ export function AttackCard() {
       {k.kind === 'soul' && (
         <div className={css.stack}>
           <p className={ui.note}>
-            Ordinary orb base power: <b>{k.normalPowerOverride ? `${k.power}% (override)` : '100%'}</b>. The game may not show a card-details panel for this
+            Ordinary soul base power: <b>{k.normalPowerOverride ? `${k.power}% (override)` : '100%'}</b>. The game may not show damage details for this
             attack.
           </p>
           <Switch
-            label="Override normal orb power"
+            label="Override normal soul power"
             description="Advanced: only for a verified replacement attack"
             checked={!!k.normalPowerOverride}
             onChange={(normalPowerOverride) => setAttack({ normalPowerOverride, power: normalPowerOverride ? k.power : 100 })}
           />
           {k.normalPowerOverride && (
-            <Field help="power" inputKey="attack.power" label="Normal orb power override">
+            <Field help="power" inputKey="attack.power" label="Normal soul power override">
               {(id) => (
                 <NumberInput
                   id={id}
@@ -206,15 +210,15 @@ export function AttackCard() {
             </Field>
           )}
           <Field
-            label="Combo finisher"
+            label="Soul Combos"
             inputKey="attack.comboMultiplier"
             group
             wide
-            note="Choose None for 1–3 cards and non-finishers. Only the last eligible normal orb gets a finisher bonus. Selected secret skills count toward chain length; the displayed chain BONUS concerns gauge points."
+            note="Choose None for 1–3 soul combos and for souls that are not finishers. Only the last eligible normal soul gets a finisher bonus. Selected secret skills count toward chain length; the displayed chain BONUS concerns gauge points."
           >
             {() => (
               <Segmented
-                ariaLabel="Combo finisher"
+                ariaLabel="Soul Combos"
                 value={k.comboMultiplier ?? 1}
                 options={FINISHER_OPTIONS}
                 onChange={(comboMultiplier) => setAttack({ comboMultiplier })}
@@ -258,48 +262,22 @@ export function AttackCard() {
               </div>
             </div>
           )}
-          <details>
-            <summary>Orb position (optional)</summary>
-            <Field help="comboPosition" group wide>
-              {() => (
-                <Segmented
-                  ariaLabel="Orb in the chain"
-                  value={k.comboPosition}
-                  options={COMBO_OPTIONS}
-                  onChange={(comboPosition) => setAttack({ comboPosition })}
-                />
-              )}
-            </Field>
-          </details>
         </div>
       )}
 
-      <Field help="matchup" wide>
+      <Field
+        help="matchup"
+        wide
+        note={
+          <span className={css.factorLine}>{affinity.value ? attributeLine(affinity.value, ATTRIBUTE_LABEL[a.attribute]) : `= ? · ${affinity.error}`}</span>
+        }
+      >
         {(id) => <Select id={id} value={k.matchup} options={matchupOptions} onChange={(matchup) => setAttack({ matchup })} />}
       </Field>
-      <div className={css.atkBox} role="group" aria-label="Attribute factor explanation">
-        {affinity.value ? (
-          <>
-            <p>
-              <strong>Resolved attribute factor: ×{affinity.value.factor.toString()}</strong>
-            </p>
-            <p className={ui.note}>
-              Base {affinity.value.base.toString()}
-              {affinity.value.enhanced.compare(0) !== 0 && <> · enhanced {affinity.value.enhanced.toString()}</>}
-              {affinity.value.ultimate.compare(0) !== 0 && <> · Ultimate {affinity.value.ultimate.toString()}</>}
-              {affinity.value.weak.compare(0) !== 0 && <> · Weakness Strike {affinity.value.weak.toString()}</>}
-              {affinity.value.superWeak.compare(0) !== 0 && <> · Super Weakness Strike {affinity.value.superWeak.toString()}</>}
-            </p>
-            <p className={ui.note}>These contributions add within one attribute factor. True Attribute Unbound is applied separately.</p>
-          </>
-        ) : (
-          <p className={ui.note}>{affinity.error}</p>
-        )}
-      </div>
       <Field help="popup" inputKey="attack.popup" group wide>
         {() => (
           <div className={css.stack}>
-            <Segmented ariaLabel="Popup on the hit" value={k.popup} options={POPUP_OPTIONS} onChange={(popup) => setAttack({ popup })} />
+            <Segmented ariaLabel="Weakness result" value={k.popup} options={POPUP_OPTIONS} onChange={(popup) => setAttack({ popup })} />
             {k.popup !== 'none' && (
               <div className={ui.grid}>
                 <EffectField type="weakDmg" />
@@ -316,7 +294,6 @@ export function AttackCard() {
             <SpecialHit
               inputKey="attack.crit"
               title="Critical"
-              description={`× (${CRIT_BASE} + Critical Power bonus + enemy resistance DOWN), with percentages converted to fractions`}
               active={k.crit}
               control={
                 <Segmented ariaLabel="Critical" value={k.crit ? 'normal' : 'off'} options={critOptions} onChange={(c) => setAttack({ crit: c === 'normal' })} />
@@ -328,7 +305,6 @@ export function AttackCard() {
             <SpecialHit
               inputKey="attack.pierce"
               title="Pierce"
-              description={`Adds ${pct(PIERCE_ATK_SHARE.normal)} of your battle ATK, ignoring DEF (Super: ${pct(PIERCE_ATK_SHARE.super)}), then applies Pierce Power and enemy resistance. Super boosts favorable contributions by ×1.2.`}
               active={k.pierce !== 'off'}
               control={<Segmented ariaLabel="Pierce" value={k.pierce} options={procOptions} onChange={(pierce) => setAttack({ pierce })} />}
             >
@@ -338,7 +314,6 @@ export function AttackCard() {
             <SpecialHit
               inputKey="attack.synergy"
               title="Synergy"
-              description={`Adds ${pct(ASSIST_SHARE.normal)} of support ATK ${fmtInt(a.supportAtk)} (Super: ${pct(ASSIST_SHARE.super)}), then applies Synergy Power and enemy resistance. Super boosts favorable contributions by ×1.2.`}
               active={k.synergy !== 'off'}
               control={<Segmented ariaLabel="Synergy" value={k.synergy} options={procOptions} onChange={(synergy) => setAttack({ synergy })} />}
             >
@@ -348,7 +323,6 @@ export function AttackCard() {
             <SpecialHit
               inputKey="attack.aegis"
               title="Aegis"
-              description={`Adds ${pct(ASSIST_SHARE.normal)} of your DEF (Super: ${pct(ASSIST_SHARE.super)}), then applies Aegis Power and enemy resistance. Super boosts favorable contributions by ×1.2.`}
               active={k.aegis !== 'off'}
               control={<Segmented ariaLabel="Aegis" value={k.aegis} options={procOptions} onChange={(aegis) => setAttack({ aegis })} />}
             >

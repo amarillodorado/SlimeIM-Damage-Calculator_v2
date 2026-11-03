@@ -1,4 +1,72 @@
-# Calculation corrections — version 6.2.2
+# Provider backups — version 6.3.0
+
+- Added Import providers and Export providers in Teams. JSON imports validate the whole file, add new IDs, update matching IDs and preserve unrelated entries; reimporting a file avoids duplicate entries.
+- Providers now save immediately in browser storage with accurate success/failure feedback. Leaving Teams or reloading preserves the saved list.
+- Aligned editor, storage and file limits; preserved full 60-character names and signed decimal effects, and repaired duplicate stored IDs.
+- Documented portable backups, formats, limits and storage belonging to the current browser and website address.
+
+Validation: 130 tests, TypeScript and production build passed. Browser verified real JSON import/export, retention of existing providers, signed/scoped effects and restoration after reload.
+## Dynamic combination-rules sentence — 2026-11-03
+
+- The Combination rules summary now updates from the selected provider count and skill-point limit, including singular/plural wording and the unlimited case.
+- Kept exactly one dynamic summary sentence and one separate general explanation sentence. Combination selection and damage calculations are unchanged.
+
+## Teams explanation — 2026-11-03
+
+- Clarified the workflow: fix one attacker, enemy and soul attack in Calculator, then compare combinations from a pool of buff providers. Only the fixed attacker’s selected attack is scored.
+- Explained that combinations use exactly the selected number of distinct providers. The skill-point limit is an upper bound, not a requirement to spend every point; 0 means unlimited.
+- Clarified each provider’s complete effect set and total entered skill cost, shared base effects, ranking order and the absence of automatic individual-skill or repeated-use optimization. Calculation behavior is unchanged.
+
+## Weakness result label — 2026-11-03
+
+- Renamed Popup on the hit to Weakness result in the selector, accessible name, required-input messages and help directions.
+- Updated True Attribute Unbound instructions and Guide references to use the selected weakness result. Damage logic and saved input keys are unchanged.
+
+## Weak Point explanation — 2026-11-03
+
+- Added the attribute-side and matching Physical/Magic weakness conditions to the field help and Guide, including a conditions table and official guide link.
+- Added the reported magic Milim example: an applicable damage-to-Wind protection bonus against a Wind enemy weak only to Physical gives Weak Point. Super Weak Point also requires Magic weakness.
+- Clarified that weakness results do not replace the natural base attribute multiplier. The selector label and damage calculation are unchanged; Weakness result is proposed as a clearer label.
+
+## Soul Combos heading — 2026-11-03
+
+- Named the normal-soul combo selector Soul Combos, including required-input messages, the calculation trace and Guide references.
+- Clarified: choose None for 1–3 soul combos and for souls that are not finishers. Individual attacks remain souls.
+
+## Soul terminology — 2026-11-03
+
+- Renamed the normal-soul chain selector to Soul, with 4 souls / 5 souls / 6 souls options.
+- Standardized player-facing labels, help, validation, traces, summaries, Guide captions and active usage documentation on soul/souls. Normal soul and Damage % on the soul replace the previous terms.
+- Character support portraits and website sections are described by those names. Calculation logic and saved input keys are unchanged.
+
+## Remove orb position — 2026-11-03
+
+- Removed the optional Orb position control, its tags and trace labels, and automatic position changes when copying a hit. Combo finisher and its damage calculation remain unchanged.
+- Removed obsolete position help and data fields. Older saved setups and share links still load; their unused position value is ignored.
+- Single/AoE behavior is unchanged: switching it alone does not change Calculator damage; it changes target-specific field labels and filters applicable buffs in Teams. Ordinary normal orbs use Single.
+
+## Wording clarifications — 2026-11-03
+
+- Clarified that Troop ATK is the combined lineup total, including the protector’s flat ATK contribution; Divine Protection’s percentage ATK boost is entered separately. Updated the shared help and Guide consistently.
+- Removed the inline Magic Attack Resistance requirement explanation. The used badge, validation and help remain available.
+- Target and optional orb-position controls are unchanged. Ordinary player orbs use Single; orb position labels the hit and does not determine its damage or combo-finisher factor.
+
+# Interface and guide — version 6.2.3
+
+- Special hits in the Attack card show only their switch and, while on, their power and resistance fields. The formula texts with example values were removed; Guide → Popups & special hits explains each special hit.
+- The resolved attribute factor is a single line under the matchup selector, for example “= 1.5 + 0.1 (Dark+) + 0.4 (Ultimate) = ×2”.
+- New Guide section “Two ways to collect the values”: battle screens versus pre-battle screens, what the battle screens never show, and a worked example of a real hit (4,134,209) with the source of every input. The ATK section shows a real base (14,689 + 92% = 28,203).
+- Guide figures are crops of the 2026-11-02 screenshots and keep their own aspect ratio. Unused older figures were removed.
+- The Ultimate bonus vs. weak attributes starts at 40% again: it matched both recorded Ultimate hits on a weaker attribute exactly. Missing or invalid saved values also become 40%; the field still has to be confirmed. The 140% client fallback is no longer mentioned in the app.
+- “Damage % on the card” shows one hint instead of two (only the required-input message remains). Removed the “Based on client 5.0.20 …” footer line.
+- Pre-battle ATK starts from one value: the ATK under the character on the troop screen (Status Attributes), which already contains equipment, the support character and EX abilities, but not the Divine Protection’s ATK boost. Character ATK, Add support ATK and flat ATK are gone; Support character ATK only appears for Synergy. Older pre-battle setups ask for the troop ATK once.
+- Pre-battle ATK: one “Increased ATK %” field for all lines added up (Divine Protection, supporting protections, protection skills, traits); only Super hits keep separate UP/DOWN rows. The game adds the % and rounds up once: 14,689 + 92% = 28,203 and 14,689 + 70% = 24,972 fit only that way, so older separate ATK rows are now added before rounding.
+- Guide: the troop screen’s Status Attributes (troop ATK) and Skills (enchantments, EX ability effects and traits in tabs), with a new figure.
+- Required-input messages keep ATK and DEF in capitals (“Enter a valid troop ATK.”). The header shows v6.2.3.
+
+Validation: 108 tests, TypeScript, ESLint and production build passed.
+
+## Version 6.2.2 — calculation corrections
 
 - Clarified Base attribute matchup versus Resolved attribute factor. The latter uses the same exact Decimal helper as the engine and shows the additive contributions.
 - Removed the140% Ultimate prefill. The addition starts genuinely blank/unknown; a naturally advantageous supported Ultimate requires a supplied value. Saved explicit40/140 entries are preserved.

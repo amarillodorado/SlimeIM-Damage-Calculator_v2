@@ -23,7 +23,7 @@ export function comparisonRequirements(hit: Hit, enemy: Enemy, pool: SupportUnit
   const missing = getMissingRequirements(candidate, enemy);
   return {
     missing,
-    needsSupport: attack.synergy !== 'off' || (hit.attacker.atkMode === 'build' && hit.attacker.addSupportAtk),
+    needsSupport: attack.synergy !== 'off',
     needsDef: attack.aegis !== 'off',
   };
 }

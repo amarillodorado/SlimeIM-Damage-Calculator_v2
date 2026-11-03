@@ -1,5 +1,6 @@
 import { blankAttack, blankAttacker, blankEnemy, defaultWorkspace, newId } from './defaults';
 import { EFFECT_BY_ID } from './effects';
+import { MAX_PROVIDERS, MAX_PROVIDER_COST, MAX_PROVIDER_EFFECTS, MAX_PROVIDER_EFFECT_VALUE, MAX_PROVIDER_NAME, MAX_PROVIDER_NOTE } from './providerLimits';
 import type { SupportUnit, UnitEffect } from './teams';
 import {
   ATTRIBUTES,
@@ -32,7 +33,6 @@ const oneOf = <T extends string>(v: unknown, allowed: readonly T[], fallback: T)
 
 const ATTRIBUTE_FILTER = [...ATTRIBUTES, 'any'] as const;
 const PROC = ['off', 'normal', 'super'] as const;
-const COMBO = [1, 2, 3, 4, 5, 6] as const;
 
 function confirmations(raw: unknown): InputConfirmations {
   if (!isObj(raw)) return {};
@@ -50,9 +50,9 @@ function attacker(raw: unknown): Attacker {
     attackType: oneOf(raw.attackType, ['physical', 'magic'] as const, b.attackType),
     atkMode: oneOf(raw.atkMode, ['battle', 'build'] as const, b.atkMode),
     battleAtk: num(raw.battleAtk, b.battleAtk, 0),
-    characterAtk: num(raw.characterAtk, b.characterAtk, 0),
+    // The older character + support ATK is not a troop ATK, so pre-battle setups ask for it again.
+    troopAtk: num(raw.troopAtk, b.troopAtk, 0),
     supportAtk: num(raw.supportAtk, b.supportAtk, 0),
-    addSupportAtk: bool(raw.addSupportAtk, b.addSupportAtk),
     ownDef: num(raw.ownDef, b.ownDef, 0),
     comboBuddyAtk1: num(raw.comboBuddyAtk1, 0, 0),
     comboBuddyAtk2: num(raw.comboBuddyAtk2, 0, 0),
@@ -67,7 +67,6 @@ function attacker(raw: unknown): Attacker {
 function attack(raw: unknown): Attack {
   const b = blankAttack();
   if (!isObj(raw)) return b;
-  const combo = COMBO.find((c) => c === raw.comboPosition) ?? b.comboPosition;
   const kind = raw.kind === 'skill' ? 'soul' : oneOf(raw.kind, ['soulOfCombos', 'soul'] as const, b.kind);
   const power = num(raw.power, kind === 'soul' ? 100 : b.power, 0, 100000);
   const normalPowerOverride = bool(raw.normalPowerOverride, kind === 'soul' && power !== 100);
@@ -78,9 +77,9 @@ function attack(raw: unknown): Attack {
     // Preserve an old explicit nonstandard orb power for review, not as a silent baseline.
     normalPowerOverride,
     variant: oneOf(raw.variant, ['normal', 'ex', 'ultimate'] as const, b.variant),
-    ultimateBonus: typeof raw.ultimateBonus === 'number' && Number.isFinite(raw.ultimateBonus) ? Math.min(1000, Math.max(-100, raw.ultimateBonus)) : null,
+    // Missing, empty or invalid saved values fall back to the 40% default.
+    ultimateBonus: num(raw.ultimateBonus, b.ultimateBonus ?? 40, -100, 1000),
     target: oneOf(raw.target, ['single', 'all'] as const, b.target),
-    comboPosition: combo,
     comboMultiplier: num(raw.comboMultiplier, 1, 0, 1000),
     matchup: oneOf(raw.matchup, ['auto', 'advantage', 'neutral', 'disadvantage'] as const, b.matchup),
     popup: oneOf(raw.popup, ['none', 'weak', 'superWeak'] as const, b.popup),
@@ -113,7 +112,7 @@ function unitEffect(raw: unknown): UnitEffect | null {
   if (raw.type !== type) return null;
   return {
     type,
-    value: num(raw.value, 0, -100000, 100000),
+    value: num(raw.value, 0, -MAX_PROVIDER_EFFECT_VALUE, MAX_PROVIDER_EFFECT_VALUE),
     attribute: oneOf(raw.attribute, ATTRIBUTE_FILTER, 'any'),
     attackType: oneOf(raw.attackType, ['any', 'physical', 'magic'] as const, 'any'),
     target: oneOf(raw.target, ['any', 'single', 'all'] as const, 'any'),
@@ -203,24 +202,30 @@ export function normalizeWorkspace(raw: unknown): Workspace {
 
 export function normalizeUnits(raw: unknown): SupportUnit[] {
   if (!Array.isArray(raw)) return [];
-  return raw.slice(0, 60).flatMap((u): SupportUnit[] => {
+  const units = raw.slice(0, MAX_PROVIDERS).flatMap((u): SupportUnit[] => {
     if (!isObj(u) || typeof u.name !== 'string') return [];
     const t = isObj(u.triggers) ? u.triggers : {};
     return [
       {
         id: str(u.id, '', 64) || newId(),
-        name: str(u.name, 'Unit', 40),
-        skillCost: num(u.skillCost, 0, 0, 9999),
+        name: str(u.name, 'Unit', MAX_PROVIDER_NAME),
+        skillCost: num(u.skillCost, 0, 0, MAX_PROVIDER_COST),
         icon: typeof u.icon === 'string' && /^units\/[\w.-]+\.png$/.test(u.icon) ? u.icon : undefined,
         effects: Array.isArray(u.effects)
           ? u.effects
-              .slice(0, 20)
+              .slice(0, MAX_PROVIDER_EFFECTS)
               .map(unitEffect)
               .filter((e): e is UnitEffect => e !== null)
           : [],
         triggers: { crit: bool(t.crit, false), pierce: bool(t.pierce, false), synergy: bool(t.synergy, false), aegis: bool(t.aegis, false) },
-        note: typeof u.note === 'string' ? u.note.slice(0, 120) : undefined,
+        note: typeof u.note === 'string' ? u.note.slice(0, MAX_PROVIDER_NOTE) : undefined,
       },
     ];
   });
+  const seen = new Set<string>();
+  for (const unit of units) {
+    while (!unit.id.trim() || seen.has(unit.id)) unit.id = newId();
+    seen.add(unit.id);
+  }
+  return units;
 }

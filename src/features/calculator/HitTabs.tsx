@@ -32,7 +32,7 @@ export function HitTabs({ results }: { results: Map<string, HitSummary> }) {
           type="button"
           className={ui.iconButton}
           disabled={full}
-          aria-label="Add a hit (copy of this one, next orb)"
+          aria-label="Add a hit (copy of this one)"
           title="Add hit: copy of this one"
           onClick={() => dispatch({ type: 'addHit', mode: 'duplicate' })}
         >

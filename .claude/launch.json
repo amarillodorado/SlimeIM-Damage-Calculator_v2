@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "v6-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/Hestia/Downloads/SlimeIM-Damage-Calculator", "run", "dev", "--", "--port", "5180", "--strictPort"],
+      "port": 5180
+    }
+  ]
+}
