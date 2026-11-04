@@ -6,7 +6,7 @@ export const fmtInt = (n: number) => Math.round(n).toLocaleString('en-US');
 export const fmtFactor = (f: number) => `×${f >= 10 ? f.toFixed(1) : f.toFixed(2)}`;
 export const fmtPct = (n: number) => `${n > 0 ? '+' : ''}${(Math.round(n * 10) / 10).toLocaleString('en-US')}%`;
 
-export const hitLabel = (hit: Hit, index: number) => hit.attacker.name.trim() || `Hit ${index + 1}`;
+export const hitLabel = (hit: Hit, index: number) => hit.attacker.name.trim() || `Setup ${index + 1}`;
 
 /** Popups and special hits of a hit, as the game names them. */
 export function hitTags(hit: Hit): string[] {
@@ -14,7 +14,7 @@ export function hitTags(hit: Hit): string[] {
   const tags: string[] = [];
   if (k.popup === 'weak') tags.push('Weak Point');
   if (k.popup === 'superWeak') tags.push('Super Weak Point');
-  if (k.crit) tags.push('Critical');
+  if (k.crit) tags.push(k.superCrit ? 'Super Critical' : 'Critical');
   if (k.pierce !== 'off') tags.push(k.pierce === 'super' ? 'Super Pierce' : 'Pierce');
   if (k.synergy !== 'off') tags.push(k.synergy === 'super' ? 'Super Synergy' : 'Synergy');
   if (k.aegis !== 'off') tags.push(k.aegis === 'super' ? 'Super Aegis' : 'Aegis');

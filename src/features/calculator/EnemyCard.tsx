@@ -18,7 +18,7 @@ export function EnemyCard() {
   const set = (patch: Partial<Enemy>) => dispatch({ type: 'updateEnemy', patch });
   const usesMagic = activeHit.attacker.attackType === 'magic';
   const used = (
-    <span className={ui.labelBadge} title="This hit uses this resistance">
+    <span className={ui.labelBadge} title="This setup uses this resistance">
       used
     </span>
   );
@@ -29,7 +29,7 @@ export function EnemyCard() {
       id="enemy"
       title="Enemy"
       collapsible
-      subtitle={workspace.hits.length > 1 ? 'Shared by all hits — tap the enemy in battle.' : 'Tap the enemy in battle to see these values.'}
+      subtitle={workspace.hits.length > 1 ? 'Shared by all setups — tap the enemy in battle.' : 'Tap the enemy in battle to see these values.'}
       summary={[
         e.name.trim() || 'Enemy',
         ATTRIBUTE_LABEL[e.attribute],

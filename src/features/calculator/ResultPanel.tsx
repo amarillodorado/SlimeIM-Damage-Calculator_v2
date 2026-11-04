@@ -188,7 +188,7 @@ export function ResultPanel({ result, byHit, total }: Props) {
         )}
         {hasInput && workspace.hits.length > 1 && incompleteHits === 0 && (
           <div className={css.total}>
-            <span>Total of {workspace.hits.length} hits</span>
+            <span>Total of {workspace.hits.length} setups</span>
             <strong>
               {fmtInt(total.damage)}{' '}
               <span className={css.muted}>
@@ -199,7 +199,7 @@ export function ResultPanel({ result, byHit, total }: Props) {
         )}
         {hasInput && workspace.hits.length > 1 && incompleteHits > 0 && (
           <p className={ui.note}>
-            Complete the remaining {incompleteHits} {incompleteHits === 1 ? 'hit' : 'hits'} to calculate a total.
+            Complete the remaining {incompleteHits} {incompleteHits === 1 ? 'setup' : 'setups'} to calculate a total.
           </p>
         )}
         <div className={css.heroActions}>
@@ -216,7 +216,7 @@ export function ResultPanel({ result, byHit, total }: Props) {
           <button
             type="button"
             className={`${ui.button} ${ui.ghost}`}
-            onClick={() => window.confirm('Clear all hits and the enemy?') && dispatch({ type: 'clear' })}
+            onClick={() => window.confirm('Clear all setups and the enemy?') && dispatch({ type: 'clear' })}
           >
             <Icon name="reset" /> Clear
           </button>
@@ -269,7 +269,7 @@ export function ResultPanel({ result, byHit, total }: Props) {
         tabIndex={visible ? -1 : 0}
         onClick={() => panel.current?.scrollIntoView({ behavior: 'smooth' })}
       >
-        <span className={css.mobileBarLabel}>{workspace.hits.length > 1 ? 'Hit / total' : 'Damage'}</span>
+        <span className={css.mobileBarLabel}>{workspace.hits.length > 1 ? 'Setup / total' : 'Damage'}</span>
         <span className={css.mobileBarValue}>
           {hasInput ? fmtInt(result.damage) : '—'}
           <small>

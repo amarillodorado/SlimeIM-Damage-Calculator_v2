@@ -51,6 +51,8 @@ export function updateAttack(hit: Hit, patch: Partial<Attack>): Hit {
     if (key.startsWith('attack.') && Object.hasOwn(patch, key.slice('attack.'.length))) confirmed[key] = true;
   }
   let attack = { ...hit.attack, ...patch };
+  if (patch.superCrit === true) attack.crit = true;
+  if (patch.crit === false) attack.superCrit = false;
   if (patch.kind !== undefined && patch.kind !== hit.attack.kind) {
     attack = { ...attack, power: patch.kind === 'soul' ? 100 : 0, normalPowerOverride: false };
     invalidate(confirmed, ['attack.power', 'attack.variant', 'attack.comboMultiplier', ...contextualKeys]);

@@ -1,7 +1,7 @@
 {
   "name": "slimeim-damage-calculator",
   "private": true,
-  "version": "6.3.0",
+  "version": "6.5.1",
   "type": "module",
   "description": "Resolved-hit damage calculator and conditional buff comparison for SLIME - ISEKAI Memories, based on recovered client arithmetic.",
   "license": "Unlicense",

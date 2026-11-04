@@ -55,7 +55,7 @@ function calculationInputError(error: unknown): string | null {
   const message = (error as Error).message;
   if (/Weak Point/.test(message)) return message;
   if (/overflow|out of range|too long/.test(message)) return 'The entered stats or effect values are too large. Reduce them and try again.';
-  if (/Division by zero/.test(message)) return 'An entered effect creates a zero divisor. Check the base hit and effect values.';
+  if (/Division by zero/.test(message)) return 'An entered effect creates a zero divisor. Check the base setup and effect values.';
   return 'Check that every stat and effect contains a valid finite number.';
 }
 
@@ -143,6 +143,10 @@ function UnitEditor({ unit, onSave, onClose }: { unit: SupportUnit | null; onSav
             Enter the buffs and enemy debuffs you plan to use together from this provider, and their total skill cost above. Copy each effect separately,
             including its attack-type, target and attribute restrictions. Only applicable effects are added to the fixed attack.
           </p>
+          <p className={ui.note}>
+            Target restrictions describe the attack that benefits. “All targets” in a debuff description means the enemies receiving it, not that only AoE
+            attacks benefit. For an “all enhanced attributes” effect, choose the “+” effect type and Any attribute.
+          </p>
           <ul className={css.editorList}>
             {draft.effects.map((e, i) => (
               <li key={i} className={css.editorRow}>
@@ -183,7 +187,7 @@ function UnitEditor({ unit, onSave, onClose }: { unit: SupportUnit | null; onSav
             <Icon name="plus" /> Add effect
           </button>
           {draft.effects.length >= MAX_PROVIDER_EFFECTS && <p className={ui.note}>A provider can contain up to {MAX_PROVIDER_EFFECTS} effects.</p>}
-          <h3 className={ui.groupTitle}>Special-hit outcomes for this hit</h3>
+          <h3 className={ui.groupTitle}>Special-hit outcomes for this setup</h3>
           <p className={ui.note}>Enable an outcome only if this provider guarantees it under the selected conditions. Proc chances are not simulated.</p>
           <div className={ui.grid}>
             {(Object.keys(TRIGGER_LABEL) as (keyof UnitTriggers)[]).map((t) => (
@@ -274,14 +278,14 @@ export default function TeamsPage() {
     if (baseMissing.length)
       return {
         damage: null,
-        error: `Confirm ${baseMissing.length} required base-hit input${baseMissing.length === 1 ? '' : 's'} in the Calculator before comparing providers.`,
+        error: `Confirm ${baseMissing.length} required base-setup input${baseMissing.length === 1 ? '' : 's'} in the Calculator before comparing providers.`,
       };
     try {
       return { damage: calculateHit(base).damage, error: null };
     } catch (error) {
       const message = calculationInputError(error);
       if (message === null) throw error;
-      return { damage: null, error: `Cannot calculate the base hit. ${message} Edit the base hit before comparing providers.` };
+      return { damage: null, error: `Cannot calculate the base setup. ${message} Edit the base setup before comparing providers.` };
     }
   }, [base, baseMissing]);
   const baseDamage = baseCalculation.damage;
@@ -301,7 +305,7 @@ export default function TeamsPage() {
       if (message === null) throw error;
       // Abort the comparison rather than silently excluding an uncomputable
       // combination and presenting an incomplete ranking as the best result.
-      return { results: [], error: `Cannot calculate these combinations. ${message} Check the providers and base hit, then try again.` };
+      return { results: [], error: `Cannot calculate these combinations. ${message} Check the providers and base setup, then try again.` };
     }
   }, [base, pool, settings, tooMany, baseCalculation.error, requirements]);
   const results = ranking.results;
@@ -347,7 +351,7 @@ export default function TeamsPage() {
                   help="supportAtk"
                   inputKey="attacker.supportAtk"
                   pendingRequirement={requirements.missing.find((r) => r.key === 'attacker.supportAtk')}
-                  note="Needed by Synergy in the base hit or a selected provider."
+                  note="Needed by Synergy in the base setup or a selected provider."
                 >
                   {(id) => (
                     <NumberInput
@@ -364,7 +368,7 @@ export default function TeamsPage() {
                   help="ownDef"
                   inputKey="attacker.ownDef"
                   pendingRequirement={requirements.missing.find((r) => r.key === 'attacker.ownDef')}
-                  note="Needed by Aegis in the base hit or a selected provider."
+                  note="Needed by Aegis in the base setup or a selected provider."
                 >
                   {(id) => (
                     <NumberInput
@@ -495,7 +499,7 @@ export default function TeamsPage() {
           title="Ranked buff combinations"
           subtitle={
             baseCalculation.error
-              ? 'Edit the base hit to calculate buff combinations.'
+              ? 'Edit the base setup to calculate buff combinations.'
               : ranking.error
                 ? 'The comparison is unavailable until the calculation inputs are corrected.'
                 : tooMany

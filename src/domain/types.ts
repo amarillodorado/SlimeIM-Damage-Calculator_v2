@@ -106,6 +106,8 @@ export interface Attack {
   matchup: MatchupChoice;
   popup: Popup;
   crit: boolean;
+  /** Super Critical replaces the ordinary Critical multiplier when Critical is active. */
+  superCrit?: boolean;
   pierce: Proc;
   synergy: Proc;
   aegis: Proc;
@@ -160,14 +162,17 @@ export const EFFECT_TYPE_IDS = [
   'atkPct',
   'typeAtk',
   'elementAtk',
+  'enhancedElementAtk',
   'targetAtk',
   'defDown',
   'typeResDown',
   'elementResDown',
+  'enhancedElementResDown',
   'targetResDown',
   'vsAttribute',
   'typeDmg',
   'elementDmg',
+  'enhancedElementDmg',
   'targetDmg',
   'soulDmg',
   'ultimateSoulDmg',
@@ -176,6 +181,7 @@ export const EFFECT_TYPE_IDS = [
   'enamorStrike',
   'typeDmgResDown',
   'elementDmgResDown',
+  'enhancedElementDmgResDown',
   'targetDmgResDown',
   'soulDmgResDown',
   'weakDmg',

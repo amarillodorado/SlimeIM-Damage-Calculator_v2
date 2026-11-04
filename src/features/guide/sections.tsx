@@ -23,7 +23,7 @@ export function QuickStart() {
       <div className={css.prose}>
         <p>
           Highlight required inputs starts on. Click a required choice even if it is already selected, and enter or explicitly confirm numeric values. Missing
-          inputs remain listed beside the result; calculation starts automatically when this hit is complete. Turning highlighting off keeps these checks
+          inputs remain listed beside the result; calculation starts automatically when this setup is complete. Turning highlighting off keeps these checks
           active. Synergy requires support ATK, Aegis requires your current DEF, and True Attribute Unbound requires only the factor matching the selected
           weakness result. Saved confirmations are remembered. Older setups retain their values and ask for confirmation once.
         </p>
@@ -46,7 +46,7 @@ export function QuickStart() {
         </ol>
         <p>
           Enter the observed damage under <b>Check a real hit</b>. A matching allowed roll shows that this setup can reproduce the hit. It does not prove the
-          actual random draw or uniquely validate every input. Add a separate hit for each attack you want to total.
+          actual random draw or uniquely validate every input. Add a separate setup for each attack you want to total.
         </p>
         <p>
           Not sure where a value is shown in the game? See <a href={hrefFor('guide', 'ways')}>Two ways to collect the values</a>.
@@ -435,10 +435,15 @@ export function PopupsGuide() {
           itself replace that natural matchup.
         </p>
         <p>
-          An Ultimate Soul of Combos “greatly increases damage to weak attributes”: on a natural advantage it adds its bonus to this base. The default 40%
-          matched both recorded Ultimate hits on a weaker attribute and gives <b>1.5 + 0.1 + 0.4 = ×2.0</b> with a “+” attribute. A Weak Point popup on a
-          neutral matchup does not activate it. The Base attribute matchup selector shows the base; the “=” line below it adds the “+”, Ultimate and Weakness
-          Strike contributions. TAU is a separate factor.
+          Ordinary and “+” attribute effects use separate fields under All types. “Decrease all targets’ all enhanced attribute damage resistance” belongs
+          to the matching “+” damage resistance DOWN field, such as Dark+ damage resistance DOWN for a Dark+ attack. Each attack receives its matching factor
+          once. “All targets” identifies the enemies receiving the debuff and does not restrict the bonus to AoE attacks.
+        </p>
+        <p>
+          An Ultimate Soul of Combos “greatly increases damage to weak attributes”: on a natural advantage it adds its bonus to this base. The supplied
+          master table confirms 40% for level-120 [Armored Dragonoid] Milim, giving <b>1.5 + 0.1 + 0.4 = ×2.0</b> with Dark+. Other recovered Epic entries
+          have 10%; the bonus depends on the character and upgrade. The 40% starting value remains editable. A Weak Point result on a neutral matchup does not activate it.
+          The Base attribute matchup selector shows the base; the “=” line below it adds the “+”, Ultimate and Weakness Strike contributions. TAU is a separate factor.
         </p>
         <h3>Weak Point and Super Weak Point</h3>
         <p>
@@ -482,6 +487,12 @@ export function PopupsGuide() {
         <dl className={css.dl}>
           <dt>Critical</dt>
           <dd>× (1.3 + Critical Power / 100 + enemy Critical Resistance DOWN / 100).</dd>
+          <dt>Super Critical</dt>
+          <dd>
+            Uses a base factor of 1.5 and multiplies favorable Critical Power UP and enemy Critical Resistance DOWN bonuses by 1.3. Critical Power DOWN
+            and enemy Critical Resistance UP remain unscaled. These recovered constants apply automatically and replace the ordinary Critical multiplier.
+            Its chance is checked after an ordinary Critical succeeds; Super Critical Rate does not increase the ordinary Critical chance.
+          </dd>
           <dt>Pierce</dt>
           <dd>
             Adds 6% of the attacker’s Battle ATK after the preceding damage factors, then applies Pierce Power and resistance. This added term ignores DEF; the
@@ -671,7 +682,8 @@ export function Limits() {
     <Card id="guide-limits" title="Limits and open questions">
       <div className={css.prose}>
         <p>
-          <b>Unsupported paths:</b> Super Critical’s two coefficients were not recovered from the supplied files. Counterattacks, multi-hit distribution,
+          <b>Super Critical values:</b> the supplied official master table confirms a 1.5 base and 1.3 multiplier on favorable bonuses; both apply automatically.
+          <b> Unsupported paths:</b> counterattacks, multi-hit distribution,
           barriers, absorption, damage over time, Vengeance and direct-damage battle skills are not simulated by this interface.
         </p>
         <p>

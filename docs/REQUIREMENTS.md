@@ -4,7 +4,7 @@ The tool helps players reproduce a supported hit from independently recorded bat
 
 ## Required behavior
 
-- Start with one blank hit and no observed damage, character name or seeded battle effects.
+- Start with one blank setup and no observed damage, character name or seeded battle effects.
 - Remember the user's subsequent inputs. Clear resets the current workspace; share links load only the encoded setup.
 - Prefer current Battle ATK for real-hit checks. Ordinary ATK-stat effects must not be counted again.
 - Label pre-battle ATK reconstruction as an estimate; it starts from the troop screen ATK and adds the summed battle ATK %, rounded up once.
@@ -29,7 +29,9 @@ Providers are saved immediately in browser storage with success/failure feedback
 
 ## Unsupported paths and open checks
 
-Super Critical's formula was recovered, but two numeric coefficients were not recovered from the supplied files. The interface does not simulate direct-damage battle skills, counterattacks, multi-hit distribution, barriers, absorption, damage over time or Vengeance. It does not roll proc chances.
+Super Critical uses the recovered 1.5 base and 1.3 favorable-bonus multiplier automatically. It replaces the ordinary Critical factor; signed sources remain separate. The obsolete manual coefficient fields in old saved setups and share links are discarded in favor of these verified game constants. The interface does not simulate direct-damage battle skills, counterattacks, multi-hit distribution, barriers, absorption, damage over time or Vengeance. It does not roll proc chances.
+
+Ordinary and matching “+” attribute ATK, damage, resistance and damage-resistance effects form separate multiplicative factors. The extra “+” effects are ignored for ordinary attacks and survive saved setups and provider JSON import/export.
 
 The exact pre-battle stat composition, generic ordinary-soul damage grouping and upstream combo eligibility need further controlled battle checks. Native implementation coverage is broader than this interface; the research reference is not a feature checklist.
 

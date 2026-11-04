@@ -72,6 +72,7 @@ export function BuffsCard() {
         );
       })}
       <p className={ui.note}>
+        {hit.attacker.plus && <>Ordinary and “+” attribute effects have separate fields under All types and multiply independently. </>}
         Stun Strike and Enamor Strike appear while the enemy is stunned or enamored, guard penetration while it guards. Skip rates (pierce, synergy, critical
         chance), counter power, defensive damage resistance, enamor amount and seal resistance. Your own battle DEF is required in step 2 when Aegis is
         selected; do not add its defensive buffs again.

@@ -71,9 +71,9 @@ const HELP = {
   ultimateBonus: {
     label: 'Ultimate bonus vs. weak attributes',
     where: 'Ultimate Soul of Combos: “Greatly increases damage to weak attributes”. The game shows no number.',
-    use: 'Counts only when your attribute beats the enemy’s, not because of a Weak Point popup on a neutral matchup. 40% adds 0.4 to the attribute factor: with a “+” attribute 1.5 + 0.1 + 0.4 = 2.0. Both recorded Ultimate hits on a weaker attribute matched 40% exactly; change it only if a hit of another character shows a different value.',
+    use: 'Counts only when your attribute beats the enemy’s, not because of a Weak Point result on a neutral matchup. The supplied master data confirms 40% for level-120 [Armored Dragonoid] Milim: with Dark+, 1.5 + 0.1 + 0.4 = 2.0. Other recovered Epic overrides include 10%. Use the value for your character’s active upgrade; the 40% starting value is not universal.',
     example: 'Milim (Dark+) vs. Gold Bat (Light): ×1.6 → ×2.0.',
-    confidence: 'verified',
+    confidence: 'client',
   },
   matchup: {
     label: 'Base attribute matchup',
@@ -90,7 +90,7 @@ const HELP = {
   specialHits: {
     label: 'Special hits',
     where: 'Hit popups such as Critical, Pierce, Synergy and Aegis.',
-    use: 'Select the outcome that occurred; its power and resistance fields then appear below it. Rate effects are chances, not damage-power factors. How each special hit changes the damage is explained in Guide → Popups & special hits. Super Critical is unavailable because its two numeric coefficients were not recovered from the supplied files. For other Super hits, keep simultaneous positive and negative sources separate.',
+    use: 'Select the outcome that occurred; its power and resistance fields then appear below it. Rate effects are chances, not damage-power factors. How each special hit changes the damage is explained in Guide → Popups & special hits. Super Critical replaces ordinary Critical: base factor 1.5, with favorable power and resistance bonuses multiplied by 1.3. These constants apply automatically. For Super hits, keep simultaneous positive and negative sources separate.',
   },
   enemyDef: {
     label: 'Enemy DEF',

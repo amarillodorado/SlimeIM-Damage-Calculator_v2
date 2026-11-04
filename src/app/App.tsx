@@ -59,7 +59,7 @@ export function App() {
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={34} height={34} />
             <span className={styles.brandText}>
               <strong>Slime IM Damage Calc</strong>
-              <span>ISEKAI Memories · v6.3.0</span>
+              <span>ISEKAI Memories · v6.5.1</span>
             </span>
           </a>
           <nav className={styles.nav} aria-label="Main">

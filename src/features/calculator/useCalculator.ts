@@ -43,7 +43,7 @@ export function useResults() {
         max += r.max;
       } catch (cause) {
         if (!(cause instanceof RangeError)) throw cause;
-        error ??= `${hit.attacker.name || 'A hit'}: ${cause.message}`;
+        error ??= `${hit.attacker.name || 'A setup'}: ${cause.message}`;
         byHit.set(hit.id, empty);
       }
     }

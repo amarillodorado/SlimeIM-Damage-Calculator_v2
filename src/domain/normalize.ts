@@ -83,7 +83,9 @@ function attack(raw: unknown): Attack {
     comboMultiplier: num(raw.comboMultiplier, 1, 0, 1000),
     matchup: oneOf(raw.matchup, ['auto', 'advantage', 'neutral', 'disadvantage'] as const, b.matchup),
     popup: oneOf(raw.popup, ['none', 'weak', 'superWeak'] as const, b.popup),
-    crit: bool(raw.crit, b.crit),
+    crit: bool(raw.crit, b.crit) || bool(raw.superCrit, false),
+    superCrit: bool(raw.superCrit, false),
+    // Obsolete manual Super Critical coefficients are superseded by verified game constants.
     pierce: oneOf(raw.pierce, PROC, b.pierce),
     synergy: oneOf(raw.synergy, PROC, b.synergy),
     aegis: oneOf(raw.aegis, PROC, b.aegis),

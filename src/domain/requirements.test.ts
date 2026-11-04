@@ -21,6 +21,25 @@ function entered(): Workspace {
 }
 
 describe('required input contract', () => {
+  it('calculates Super Critical automatically and discards obsolete manual coefficients on load/share', async () => {
+    const ws = entered();
+    const hit = updateAttack(ws.hits[0]!, { superCrit: true });
+    ws.hits[0] = hit;
+    expect(hit.attack.crit).toBe(true);
+    expect(isHitComplete(hit, ws.enemy)).toBe(true);
+    const legacy = normalizeWorkspace({ enemy: ws.enemy, hits: [{ ...hit, attack: { ...hit.attack, superCritBase: 9, superCritPowerScale: 9 } }] });
+    expect(legacy.hits[0]!.attack).not.toHaveProperty('superCritBase');
+    expect(legacy.hits[0]!.attack).not.toHaveProperty('superCritPowerScale');
+    const restored = (await decodeWorkspace(await encodeWorkspace(legacy)))!;
+    expect(restored.hits[0]!.attack).toMatchObject({ crit: true, superCrit: true });
+    expect(isHitComplete(restored.hits[0]!, restored.enemy)).toBe(true);
+    expect(damageAt(toInput(restored.hits[0]!, restored.enemy))).toBe(27000);
+    const oldUnknown = normalizeWorkspace({ enemy: ws.enemy, hits: [{ ...hit, attack: { ...hit.attack, superCritBase: null, superCritPowerScale: null } }] });
+    expect(getMissingRequirements(oldUnknown.hits[0]!, oldUnknown.enemy)).toEqual([]);
+    const ordinary = updateAttack(hit, { crit: false });
+    expect(ordinary.attack.superCrit).toBe(false);
+    expect(getRequirements(ordinary, ws.enemy).map((row) => row.key)).not.toContain('attack.superCritBase');
+  });
   it('keeps defaults unconfirmed and highlighting enabled', () => {
     const ws = defaultWorkspace();
     const missing = getMissingRequirements(ws.hits[0]!, ws.enemy);

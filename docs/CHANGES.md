@@ -1,3 +1,25 @@
+# Setup labels — version 6.5.1
+
+- Renamed numbered calculator entries and their add, duplicate, remove, total, guidance and Teams references to Setup. In-game hit terminology and saved-data fields are unchanged.
+
+# Recovered Super Critical constants — version 6.5.0
+
+- Decoded the newly supplied official MasterBattleDefineValue table and verified its embedded SHA-256. Super Critical now uses its confirmed base 1.5 and favorable-bonus scale 1.3 automatically.
+- Removed manual Super Critical coefficient controls and required-field prompts. Old saved/share coefficient overrides are superseded by the recovered constants while preserving outcomes, signed buff sources and other setup values.
+- Retained separate positive and negative effect entries: Super Critical amplifies favorable bonuses by 30%; Super Pierce, Synergy and Aegis amplify them by 20%.
+- Confirmed the tested Epic Milim enhanced override supplies a 40% Ultimate affinity addition. It remains editable because other characters/upgrades can differ.
+- Preserved the supplied repository's analytics code and dependency. Native RVAs, table row IDs/offsets and payload hashes are recorded in MECHANICS_6_4.md.
+
+# Confirmed damage families — version 6.4.0
+
+- Restored Super Critical as an explicit outcome. Its recovered formula replaces ordinary Critical, preserves signed sources and requires two verified manual multipliers because the live defaults remain unresolved. Missing values block calculation instead of assuming another mechanic’s constants.
+- Added separate matching “+” ATK, damage, resistance and damage-resistance effect fields for all seven attributes. They multiply independently after their ordinary counterparts and do not apply to ordinary attacks.
+- Clarified “all enhanced attribute damage resistance” and “all targets”: use the matching “+” damage-resistance field once; enemy application scope does not imply an AoE-only attack restriction.
+- Preserved the newly supplied repository changes, including its analytics implementation and dependency. Saved setups and provider files support the new effect IDs.
+- Documented the native RVAs, official master/localization sources, tools used and actual REA 6.8.0 trial limits in MECHANICS_6_4.md.
+
+Validation: 160 tests, TypeScript and production build passed. Browser verified the four Dark+ inputs, their absence for ordinary Dark, blank/required Super Critical coefficients and release of those fields when Critical is off.
+
 # Provider backups — version 6.3.0
 
 - Added Import providers and Export providers in Teams. JSON imports validate the whole file, add new IDs, update matching IDs and preserve unrelated entries; reimporting a file avoids duplicate entries.

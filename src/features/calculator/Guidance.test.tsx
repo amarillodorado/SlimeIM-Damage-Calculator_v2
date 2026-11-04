@@ -190,7 +190,7 @@ describe('required-input guidance', () => {
     expect(result()).toBe('4,600');
   });
 
-  it('uses the normal-soul baseline after leaving a secret and removes Super Critical', async () => {
+  it('uses the normal-soul baseline after leaving a secret and offers the supported Critical modes', async () => {
     const ws = completeOrb();
     const hit = ws.hits[0]!;
     hit.attack = { ...hit.attack, kind: 'soulOfCombos', power: 600 };
@@ -209,7 +209,20 @@ describe('required-input guidance', () => {
     // Changing the kind requires reconfirming its popup; choose the retained None.
     await user.click(selected('Weakness result', 'None'));
     expect(result()).toBe('3,000');
-    expect(within(screen.getByRole('radiogroup', { name: 'Critical' })).queryByRole('radio', { name: 'Super' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('radiogroup', { name: 'Critical' })).getByRole('radio', { name: 'Super' })).toBeInTheDocument();
+  });
+
+  it('uses verified Super Critical constants automatically without adding required inputs', async () => {
+    const user = userEvent.setup();
+    show(completeOrb());
+    await user.click(selected('Critical', 'Super'));
+    expect(result()).toBe('4,500');
+    expect(screen.queryByLabelText('Super Critical base multiplier')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Super Critical positive-bonus multiplier')).not.toBeInTheDocument();
+    expect(screen.getByText(/Super Critical uses a 1.5 base factor/)).toBeInTheDocument();
+    await user.click(selected('Critical', 'On'));
+    expect(result()).toBe('3,900');
+    expect(screen.queryByLabelText('Super Critical base multiplier')).not.toBeInTheDocument();
   });
 
   it('requests only the active TAU popup factor', async () => {

@@ -29,7 +29,7 @@ export function CalculatorPage() {
         <section className={ui.card} role="alert">
           <h2>Check the inputs</h2>
           <p>{error}</p>
-          <p>Correct the affected hit before calculating a result or total.</p>
+          <p>Correct the affected setup before calculating a result or total.</p>
         </section>
       ) : (
         <ResultPanel result={result} byHit={byHit} total={total} />

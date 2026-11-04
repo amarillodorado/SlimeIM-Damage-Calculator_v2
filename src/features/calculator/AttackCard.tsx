@@ -35,6 +35,7 @@ const procOptions: Option<Proc>[] = [
 const critOptions: Option<Proc>[] = [
   { value: 'off', label: 'Off' },
   { value: 'normal', label: 'On' },
+  { value: 'super', label: 'Super' },
 ];
 const FINISHER_OPTIONS: Option<number>[] = [
   { value: 1, label: 'None', sub: '100%' },
@@ -151,7 +152,7 @@ export function AttackCard() {
           <Field
             help="ultimateBonus"
             inputKey="attack.ultimateBonus"
-            note="“Greatly increases damage to weak attributes”: 40% adds 0.4 to the attribute factor (see the = line below). Both recorded Ultimate hits on a weaker attribute matched 40%."
+            note="The supplied character table confirms 40% for level-120 [Armored Dragonoid] Milim: it adds 0.4 to affinity. Other characters and upgrades can differ; use their applicable value."
           >
             {(id) => (
               <NumberInput
@@ -296,11 +297,17 @@ export function AttackCard() {
               title="Critical"
               active={k.crit}
               control={
-                <Segmented ariaLabel="Critical" value={k.crit ? 'normal' : 'off'} options={critOptions} onChange={(c) => setAttack({ crit: c === 'normal' })} />
+                <Segmented ariaLabel="Critical" value={!k.crit ? 'off' : k.superCrit ? 'super' : 'normal'} options={critOptions} onChange={(c) => setAttack({ crit: c !== 'off', superCrit: c === 'super' })} />
               }
             >
               <EffectField type="critDmg" />
               <EffectField type="critResDown" />
+              {k.superCrit && (
+                <p className={ui.note}>
+                  Super Critical uses a 1.5 base factor and boosts Critical Power UP and enemy Critical Resistance DOWN bonuses by 30%.
+                  Power DOWN and resistance UP keep their original values. These verified constants apply automatically.
+                </p>
+              )}
             </SpecialHit>
             <SpecialHit
               inputKey="attack.pierce"

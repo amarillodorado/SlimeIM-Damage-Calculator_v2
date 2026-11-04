@@ -37,6 +37,16 @@ beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 
 describe('accuracy inputs', () => {
+  it('calculates Super Critical without asking for its recovered coefficients', async () => {
+    const user = userEvent.setup();
+    show(example());
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Critical' })).getByRole('radio', { name: 'Super' }));
+    expect(damage()).toBe('4,500');
+    expect(screen.getByText(/Super Critical uses a 1.5 base factor/)).toHaveTextContent('30%');
+    expect(screen.queryByRole('spinbutton', { name: 'Super Critical base multiplier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: 'Super Critical positive-bonus multiplier' })).not.toBeInTheDocument();
+  });
+
   it('keeps simultaneous Super Pierce power UP and DOWN separate', async () => {
     const user = userEvent.setup();
     show(example());
@@ -102,7 +112,7 @@ describe('accuracy inputs', () => {
     ws.hits.push(blankHit());
     show(ws);
     expect(damage()).toBe('3,000');
-    expect(screen.queryByText('Total of 2 hits')).not.toBeInTheDocument();
-    expect(screen.getByText(/Complete the remaining 1 hit to calculate a total/)).toBeInTheDocument();
+    expect(screen.queryByText('Total of 2 setups')).not.toBeInTheDocument();
+    expect(screen.getByText(/Complete the remaining 1 setup to calculate a total/)).toBeInTheDocument();
   });
 });

@@ -121,6 +121,17 @@ export const EFFECT_TYPES: EffectType[] = [
     confidence: 'client',
   },
   {
+    id: 'enhancedElementDmg',
+    category: 'damage',
+    label: '+ attribute damage UP',
+    examples: ['Dark+ damage UP'],
+    where: 'Battle effect list, skills',
+    effect: 'Only for the matching “+” attack attribute. Applied after DEF as a separate multiplier from ordinary attribute damage UP.',
+    attribute: 'attacker',
+    confidence: 'client',
+    advanced: true,
+  },
+  {
     id: 'targetDmg',
     category: 'damage',
     label: 'Single-target / AoE damage UP',
@@ -294,6 +305,17 @@ export const EFFECT_TYPES: EffectType[] = [
     confidence: 'client',
   },
   {
+    id: 'enhancedElementAtk',
+    category: 'attackPower',
+    label: '+ attribute ATK UP',
+    examples: ['Dark+ ATK UP'],
+    where: 'Battle skills, effect list',
+    effect: 'Only for the matching “+” attack attribute. Multiplies the attack input before DEF, separately from ordinary attribute ATK UP.',
+    attribute: 'attacker',
+    confidence: 'client',
+    advanced: true,
+  },
+  {
     id: 'typeAtk',
     category: 'attackPower',
     label: 'M-ATK / P-ATK UP',
@@ -361,6 +383,17 @@ export const EFFECT_TYPES: EffectType[] = [
     advanced: true,
   },
   {
+    id: 'enhancedElementResDown',
+    category: 'enemy',
+    label: 'Enemy + attribute resistance DOWN',
+    examples: ['Dark+ Resistance DOWN'],
+    where: 'Your skills; enemy effect list',
+    effect: 'Only for the matching “+” attack attribute. Lowers the effective DEF term, separately from ordinary attribute resistance DOWN; do not add the two percentages together.',
+    attribute: 'attacker',
+    confidence: 'client',
+    advanced: true,
+  },
+  {
     id: 'targetResDown',
     category: 'enemy',
     label: 'Enemy single-target / AoE resistance DOWN',
@@ -387,6 +420,17 @@ export const EFFECT_TYPES: EffectType[] = [
     examples: ['Dark Damage Resistance DOWN'],
     where: 'Your skills',
     effect: 'Applied after DEF for attacks of that attribute.',
+    attribute: 'attacker',
+    confidence: 'client',
+    advanced: true,
+  },
+  {
+    id: 'enhancedElementDmgResDown',
+    category: 'enemy',
+    label: 'Enemy + attribute damage resistance DOWN',
+    examples: ['Dark+ Damage Resistance DOWN'],
+    where: 'Your skills; enemy effect list',
+    effect: 'Only for the matching “+” attack attribute. Applied after DEF as a separate multiplier from ordinary attribute damage resistance DOWN. An “all enhanced attributes” effect includes this attribute once; “all targets” describes the enemies affected and does not make it an AoE-only bonus.',
     attribute: 'attacker',
     confidence: 'client',
     advanced: true,
@@ -483,24 +527,32 @@ export function effectLabel(id: EffectTypeId, c: LabelContext): string {
       return `${type} damage UP`;
     case 'elementDmg':
       return `${attribute} damage UP`;
+    case 'enhancedElementDmg':
+      return `${attribute}+ damage UP`;
     case 'targetDmg':
       return `${target} damage UP`;
     case 'typeAtk':
       return c.attacker.attackType === 'physical' ? 'P-ATK UP' : 'M-ATK UP';
     case 'elementAtk':
       return `${attribute} ATK UP`;
+    case 'enhancedElementAtk':
+      return `${attribute}+ ATK UP`;
     case 'targetAtk':
       return `${target} ATK UP`;
     case 'typeResDown':
       return `${type} resistance DOWN`;
     case 'elementResDown':
       return `${attribute} resistance DOWN`;
+    case 'enhancedElementResDown':
+      return `${attribute}+ resistance DOWN`;
     case 'targetResDown':
       return `${target} resistance DOWN`;
     case 'typeDmgResDown':
       return `${type} damage res. DOWN`;
     case 'elementDmgResDown':
       return `${attribute} damage res. DOWN`;
+    case 'enhancedElementDmgResDown':
+      return `${attribute}+ damage resistance DOWN`;
     case 'targetDmgResDown':
       return `${target} damage res. DOWN`;
     default:

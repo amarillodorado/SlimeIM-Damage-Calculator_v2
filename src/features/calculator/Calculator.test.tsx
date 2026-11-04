@@ -85,10 +85,10 @@ describe('clean calculator workspace', () => {
   it('adds a separate hit and displays its total', async () => {
     const user = userEvent.setup();
     renderCalculator(ordinaryInput());
-    await user.click(screen.getByRole('button', { name: /Add a hit \(copy/ }));
+    await user.click(screen.getByRole('button', { name: 'Duplicate setup' }));
     expect(screen.getAllByRole('tab')).toHaveLength(2);
     await user.click(within(screen.getByRole('radiogroup', { name: 'Soul Combos' })).getByRole('radio', { name: /100%/ }));
-    expect(screen.getByText('Total of 2 hits')).toBeInTheDocument();
+    expect(screen.getByText('Total of 2 setups')).toBeInTheDocument();
     expect(screen.getByText('6,000')).toBeInTheDocument();
   });
 
@@ -96,7 +96,7 @@ describe('clean calculator workspace', () => {
     const user = userEvent.setup();
     renderCalculator(ordinaryInput());
     const crit = screen.getByRole('radiogroup', { name: 'Critical' });
-    expect(within(crit).queryByRole('radio', { name: 'Super' })).not.toBeInTheDocument();
+    expect(within(crit).getByRole('radio', { name: 'Super' })).toBeInTheDocument();
     await user.click(within(crit).getByRole('radio', { name: 'On' }));
     expect(heroValue()).toBe('3,900');
     const power = screen.getByLabelText('Critical power UP');

@@ -23,13 +23,14 @@ export const blankAttack = (): Attack => ({
   power: 0,
   normalPowerOverride: false,
   variant: 'normal',
-  // Matched both recorded Ultimate hits on a weaker attribute (1.6 → 2.0).
+  // Confirmed for the tested Epic Milim override; other characters can differ.
   ultimateBonus: 40,
   target: 'single',
   comboMultiplier: 1,
   matchup: 'auto',
   popup: 'none',
   crit: false,
+  superCrit: false,
   pierce: 'off',
   synergy: 'off',
   aegis: 'off',

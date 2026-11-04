@@ -166,13 +166,17 @@ Super penetration uses that same form for its305/406 pair and transforms `(d+V(a
 
 Only the favorable `Ap−Rn` term is amplified by1.2; power debuffs and resistance buffs are not universally scaled by1.2.
 
-**Confirmed structure, numerical values not found:** supercritical `GetCriticalSuperRate`0xBC759EC uses
+**Confirmed in code and newly supplied master data:** supercritical `GetCriticalSuperRate`0xBC759EC uses
 
-`max(0,(criticalCommon + (Ap−Rn)×criticalUp/10000 + An−Rp)/10000)`.
+`max(0,(15000 + (Ap−Rn)×13000/10000 + An−Rp)/10000)`.
 
-Its keys `BATTLE_RATE_CRITICAL_COMMON_COEFFICIENT` and `BATTLE_RATE_CRITICAL_UP_EFFECT_COEFFICIENT` come from `MasterBattleDefineValue` through `BattleDefineValue.GetLong`. That named payload was not recovered; do not substitute the other super mechanics' constants without evidence.
+Its keys `battle.rate.critical.common.coefficient` and `battle.rate.critical.up.effect.coefficient` come from `MasterBattleDefineValue` through `BattleDefineValue.GetLong`. The user-supplied, hash-verified cache payload contains row8700000008 at decoded offset0x1d4 with15000, and row8700000009 at0x16c with13000; both carry release label `3.0.20_system_common`. The base is therefore1.5 and favorable Critical Power UP / Critical Resistance DOWN contributions are scaled by1.3. Negative power and positive resistance remain outside that scaling. Super Critical replaces ordinary Critical. [Full payload and native evidence](validation/supplied_shared_recovery/supercritical/RECOVERED_SUPER_CRITICAL.md).
 
 Other fixed factors confirmed in code: guard `(5000+p307−r408)/10000`, superguard `(1000+p308−r409)/10000`, supercounter `(20000+p306−r407)/10000`, all clamped nonnegative; combo types Retsu/Sou/Zetsu use1.1/1.5/2.0 plus the applicable801 bonus. [SPECIAL_DAMAGE.md](reports/SPECIAL_DAMAGE.md) gives exact operand roles and instruction addresses.
+
+**General combo selection confirmed in the Pic3 follow-up:** only the last attackable normal card receives a finisher: four selected cards→Retsu1.1, five→Sou1.5, six→Zetsu2. Selected secret skills count toward these thresholds. Chains of one–three cards retain1.0 and no buddy ATK contributions. Parameter801 is added only if the base finisher factor exceeds1; card position alone does not enable it. The displayed chain BONUS uses a separate gauge-point family (three cards1.10) and must not be copied as the damage factor. Full selection/pseudocode/RVAs: [COMBO_CODE.md](validation/pic3/COMBO_CODE.md).
+
+**Roster versus conditional EX parameters confirmed in the Pic3 follow-up:** the character-page aggregate is `PcParameter.total`; `PartyMainParameter.CalculateTotal` separately adds `ExStatusboardParameter` at0xAE23EFC. Formation-dependent CharacterIdGroup EX abilities query the party's main characters and add the panel parameter value at0xB3734C0. Do not add equipment again on top of the displayed aggregate, but do add a qualifying separate EX contribution. [CRITICAL_SOURCE.md](validation/pic3/CRITICAL_SOURCE.md) gives the general pipeline and all activation branches inspected.
 
 ## 4. Affinity, weakness, guide-related effects and cards
 
@@ -236,7 +240,7 @@ Every one of the **13,955 supplied MasterBuffEffect rows /110 actual parameter t
 - [all_buff_effect_rows_with_groups.csv](all_buff_effect_rows_with_groups.csv): every effect record joined to its group, preserving ID, signed value, ValueType, timing, growth, caps, target, source offset and official English name.
 - [BUFF_GROUPS.md](reports/BUFF_GROUPS.md): readable complete table and coverage counts.
 
-All110 IDs now have a **native-confirmed group, consumer or flag assignment**. This is not a claim that every subsystem's complete numerical behavior is solved: unresolved columns retain HP/cure arithmetic, replay eligibility, upstream validity and missing supercritical coefficients. Some rows concern resource/cost or conditional-application systems rather than a direct damage multiplier. Existence/identity of all rows is table-confirmed. `MasterBuffType` means Buff/Debuff/Remove; it is not a list of mechanical power IDs. Four Remove records target removal and must not automatically be summed as scalar buffs. Card/condition/system effects have separate tables and do not all appear in MasterBuffEffect.
+All110 IDs now have a **native-confirmed group, consumer or flag assignment**. This is not a claim that every subsystem's complete numerical behavior is solved: unresolved columns retain HP/cure arithmetic, replay eligibility and upstream validity. Super Critical's two coefficients are now recovered from the separately supplied cache table. Some rows concern resource/cost or conditional-application systems rather than a direct damage multiplier. Existence/identity of all rows is table-confirmed. `MasterBuffType` means Buff/Debuff/Remove; it is not a list of mechanical power IDs. Four Remove records target removal and must not automatically be summed as scalar buffs. Card/condition/system effects have separate tables and do not all appear in MasterBuffEffect.
 
 ## 8. Comparison with the supplied AppMedia hypothesis
 
@@ -278,6 +282,8 @@ damage = calculate_damage(Hit(10000, 5000,
 
 Twelve targeted tests passed. A deterministic254-case comparison with real .NET System.Decimal produced **zero numerical mismatches** for the raw kernel, final ceiling/minimum and tested normal-pierce double conversion, over input magnitudes through10^12. See [decimal_validation.json](validation/decimal_validation.json) and the reproducible oracle script. This is not proof of every CLR extreme/overflow behavior or an in-game end-to-end validation. Normal-pierce's binary64 cast helper documents its tested domain; the exact converted Decimal can be passed directly.
 
+**Subsequent in-game check:** the user's supplied Milim screenshot shows 340,865. With equipment Pierce Power +12%, the model produces exactly 340,865 at permitted roll 0.9923, with range 340,082–346,863. The user subsequently explicitly confirmed exactly +12% Pierce Power, not Pierce Rate, with no other Pierce Power bonuses; this is user-confirmed input rather than an independently visible or code-confirmed loadout stat. True Attribute Unbound 1.3 is included once; the user confirmed the normal 600% skill, not 1.8× Ultimate. The actual RNG draw remains unknown. [SCREENSHOT_CHECK.md](validation/SCREENSHOT_CHECK.md) contains the complete calculation, source images and remaining setup qualifications. A native recheck also corrected an inherited source label: synergy uses the support's `total`, not `baseParameter`; its 40% arithmetic is unchanged.
+
 ## 10. Client/server conclusion and remaining gaps
 
 **Confirmed in native code:** the client derives damage locally, computes HP deltas, collects totals, serializes battle action history and sends finish requests. Start data supplies RNG seeds. For example, `BattleState.<RequestQuestFinishAsync>.MoveNext`0xB50C0F8 calls local total getters, `BattleActionTableManager.ToJson`, then `QuestDomainService.RequestFinishQuestAsync`; applied HP is copied by `BattleCharacter.SetCurrentHp`0xBC214D0. [CLIENT_SERVER_EVIDENCE.md](reports/CLIENT_SERVER_EVIDENCE.md) gives individual call-instruction RVAs and protocol field offsets.
@@ -286,10 +292,10 @@ Twelve targeted tests passed. A deterministic254-case comparison with real .NET 
 
 Remaining explicit limits:
 
-1. Supercritical's two numerical `MasterBattleDefineValue` coefficients were not recovered as a named payload. Their consumer and algebra are recovered; values remain symbolic.
-2. The base bundle's large `catalog.bytes` remains opaque; its presence prevents an absolute claim that the missing table cannot be embedded anywhere in the supplied files.
+1. The previously missing Super Critical coefficients are resolved:15000 and13000 in the verified supplied `MasterBattleDefineValue` table. Their live release-filter state has not been directly captured; table rows and native lookup/consumer behavior are confirmed separately.
+2. The base bundle's large `catalog.bytes` has been decoded and its embedded SHA-256 verified. The user subsequently supplied both identified cache payloads: `MasterBattleDefineValue` matches the original catalog hash, while `MasterPcEnhancedElementOverride` is a newer content hash. The enhanced table has475 parsed rows with `EpicAddWeakDamageRate` values0,1000,4000; resolving the correct character/level override and eligibility remains necessary before applying a particular row universally.
 3. Upstream buff merging/replacement/coexistence and release-label filtering have not been exhaustively emulated. Supplied table values are a snapshot, not proof that every row is active in every battle.
 4. The common-hit Python API does not resolve barrier condition selection/element matching, absorption eligibility, all condition/system damage formulas, skill growth/correction eligibility, or battle scheduling. Barrier arithmetic is implemented with resolved inputs; other identified helper positions and remaining limitations are recorded. Do not use it as a complete battle simulator.
-5. No device battle observations were available. [IN_GAME_TEST_PLAN.md](IN_GAME_TEST_PLAN.md) isolates the remaining coefficients and checks the recovered rules without downloading other clients.
+5. One supplied battle hit now has an exact reproduction using user-confirmed equipment Pierce Power, described above. Other stated setup qualifications remain, and the actual RNG draw was not extracted. More independently recorded builds/hits are needed to validate other branches. [IN_GAME_TEST_PLAN.md](IN_GAME_TEST_PLAN.md) isolates the remaining coefficients and checks the recovered rules without downloading other clients.
 
 The complete source trail is the reports, annotated native disassembly, verified table exports, dumper output and saved Ghidra project under `analysis/`. Claims above should be read at their stated scope rather than as a claim that every game mechanic has been fully recovered.

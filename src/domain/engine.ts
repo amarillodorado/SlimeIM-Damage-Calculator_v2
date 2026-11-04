@@ -24,6 +24,9 @@ export const ROLL_MAX = 10099;
 export const DAMAGE_CAP = 500_000_000_000;
 
 export const CRIT_BASE = 1.3;
+// MasterBattleDefineValue IDs 8700000008 / 8700000009: 15000 / 13000 basis points.
+export const SUPER_CRIT_BASE = 1.5;
+export const SUPER_CRIT_POWER_SCALE = 1.3;
 export const PIERCE_ATK_SHARE = { normal: 0.06, super: 1 } as const;
 export const ASSIST_SHARE = { normal: 0.4, super: 0.55 } as const;
 export const GUARD_BASE = { guard: 0.5, superGuard: 0.1 } as const;
@@ -66,7 +69,7 @@ function kernelFromA(attack: ClrDecimal, defense: ClrDecimal, roll: number): Clr
 const regularDecimalRate = (base: number, power: ClrDecimal, resistDown: ClrDecimal) => maxD(0, D(base).add(power.add(resistDown).div(100)));
 export const regularRate = (base: number, power: number, resistDown: number) => regularDecimalRate(base, D(power), D(resistDown)).toNumber();
 
-/** Super variants amplify only the favourable part (power UP, resistance DOWN) by 1.2. */
+/** Super Pierce, Synergy and Aegis amplify favourable contributions by 1.2. */
 function superDecimalRate(power: number[], resistDown: number[]): ClrDecimal {
   const all = [...power, ...resistDown];
   const favourable = all.reduce((s, x) => s.add(maxD(x, 0)), ZERO);
@@ -75,6 +78,32 @@ function superDecimalRate(power: number[], resistDown: number[]): ClrDecimal {
 }
 export function superRate(power: number, resistDown: number, powerEntries: number[] = [power], resistanceEntries: number[] = [resistDown]): number {
   return superDecimalRate(powerEntries, resistanceEntries).toNumber();
+}
+
+/**
+ * Low-level GetCriticalSuperRate algebra (0xBC759EC), preserving the native
+ * basis-point sequence. Explicit coefficients support independent Decimal oracles;
+ * player calculations use the recovered constants in getSuperCriticalFactor.
+ */
+export function superCriticalRate(base: number, powerScale: number, power: number[], resistanceDown: number[]): ClrDecimal {
+  if (typeof base !== 'number' || !Number.isFinite(base) || typeof powerScale !== 'number' || !Number.isFinite(powerScale))
+    throw new RangeError('Super Critical coefficients must be finite numbers.');
+  const positive = (entries: number[]) => entries.reduce((sum, value) => sum.add(maxD(value, 0)), ZERO);
+  const negative = (entries: number[]) => entries.reduce((sum, value) => sum.add(minD(value, 0)), ZERO);
+  // UI resistance DOWN signs are the inverse of native receiver-resistance signs.
+  const ap = positive(power).mul(100);
+  const an = negative(power).mul(100);
+  const rp = negative(resistanceDown).mul(-100);
+  const rn = positive(resistanceDown).mul(-100);
+  const commonCoefficient = D(base).mul(10000);
+  const upCoefficient = D(powerScale).mul(10000);
+  const favorable = ap.sub(rn).mul(upCoefficient).div(10000);
+  return maxD(0, commonCoefficient.add(favorable).add(an).sub(rp).div(10000));
+}
+
+/** Official MasterBattleDefineValue coefficients: base 1.5, favorable bonuses 1.3. */
+export function getSuperCriticalFactor(input: HitInput): ClrDecimal {
+  return superCriticalRate(SUPER_CRIT_BASE, SUPER_CRIT_POWER_SCALE, sourceEntries(input, 'critDmg'), sourceEntries(input, 'critResDown'));
 }
 
 /** No tolerance snapping: genuine fractions must always round upward. */
@@ -100,6 +129,11 @@ export function effectApplies(type: EffectTypeId, input: HitInput): Applicabilit
   const { attacker: a, attack: k, enemy: e } = input;
   const soc = k.kind === 'soulOfCombos';
   switch (type) {
+    case 'enhancedElementAtk':
+    case 'enhancedElementDmg':
+    case 'enhancedElementResDown':
+    case 'enhancedElementDmgResDown':
+      return a.plus ? { applies: true } : { applies: false, reason: 'Requires the matching “+” attack attribute' };
     case 'atkPct':
       return a.atkMode === 'battle' ? { applies: false, reason: 'Already in the battle ATK' } : { applies: true };
     case 'soulDmg':
@@ -269,14 +303,16 @@ export function computeHit(input: HitInput, roll: number = ROLL_MID, trace = fal
   // GetAttackRateBase multiplies target, attack type and element in this order.
   const attackPower = plusD(t('targetAtk'))
     .mul(plusD(t('typeAtk')))
-    .mul(plusD(t('elementAtk')));
+    .mul(plusD(t('elementAtk')))
+    .mul(plusD(t('enhancedElementAtk')));
   const attackValue = battleAtk.add(assist).add(aegisAdd).add(buddy1).add(buddy2).mul(attackPower);
   const defDelta = sourceEntries(input, 'defDown').reduce((sum, value) => sum.add(D(e.def).mul(D(value).neg().div(100)).ceil()), ZERO);
   const defStat = maxD(0, D(e.def).add(defDelta));
   const shownRes = a.attackType === 'physical' ? e.physRes : e.magicRes;
   const resistance = plusD(t('targetResDown').neg())
     .mul(plusD(D(shownRes).sub(t('typeResDown'))))
-    .mul(plusD(t('elementResDown').neg()));
+    .mul(plusD(t('elementResDown').neg()))
+    .mul(plusD(t('enhancedElementResDown').neg()));
   const effectiveDef = defStat.mul(resistance);
   if (trace) {
     if (assist.compare(0))
@@ -317,6 +353,7 @@ export function computeHit(input: HitInput, roll: number = ROLL_MID, trace = fal
   const dmgUp = plusD(t('targetDmg'))
     .mul(plusD(t('typeDmg')))
     .mul(plusD(t('elementDmg')))
+    .mul(plusD(t('enhancedElementDmg')))
     .mul(condition)
     .mul(q);
   d = d.mul(dmgUp);
@@ -325,6 +362,7 @@ export function computeHit(input: HitInput, roll: number = ROLL_MID, trace = fal
   const dmgRes = minusD(t('targetDmgResDown').neg())
     .mul(minusD(t('typeDmgResDown').neg()))
     .mul(minusD(t('elementDmgResDown').neg()))
+    .mul(minusD(t('enhancedElementDmgResDown').neg()))
     .mul(soc ? minusD(t('soulDmgResDown').neg()) : ONE);
   d = d.mul(dmgRes);
   if (dmgRes.compare(1)) push('dmgRes', 'Damage resistance DOWN', 'separate target, attack-type, attribute and eligible secret-skill factors', dmgRes);
@@ -335,12 +373,12 @@ export function computeHit(input: HitInput, roll: number = ROLL_MID, trace = fal
   if (combo.compare(1))
     push('combo', 'Soul Combos', `entered base ${comboBase.mul(100).toString()}% + separately entered eligible combo damage`, combo);
   if (k.crit) {
-    const crit = regularDecimalRate(CRIT_BASE, t('critDmg'), t('critResDown'));
+    const crit = k.superCrit ? getSuperCriticalFactor(input) : regularDecimalRate(CRIT_BASE, t('critDmg'), t('critResDown'));
     d = d.mul(crit);
     push(
       'crit',
-      'Critical',
-      join('1.3', [
+      k.superCrit ? 'Super Critical' : 'Critical',
+      k.superCrit ? `base ${SUPER_CRIT_BASE}; favorable power/resistance ×${SUPER_CRIT_POWER_SCALE}; penalties unscaled` : join('1.3', [
         [n('critDmg'), 'critical power'],
         [n('critResDown'), 'res DOWN'],
       ]),

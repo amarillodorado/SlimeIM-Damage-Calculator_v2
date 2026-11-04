@@ -16,13 +16,13 @@ export function RequiredInputs() {
       />
       <p>
         Confirm each required choice, including preselected choices. Enter a value or use Confirm value for numeric inputs. Calculations start automatically
-        when this hit is complete.
+        when this setup is complete.
       </p>
       <div className={ui.guidanceStatus}>
         <span>
           {missing.length
             ? `${missing.length} input${missing.length === 1 ? ' still needs' : 's still need'} confirmation`
-            : 'All required inputs confirmed for this hit'}
+            : 'All required inputs confirmed for this setup'}
         </span>
         {missing[0] && (
           <button type="button" className={`${ui.button} ${ui.ghost}`} onClick={() => focusRequiredInput(missing[0]!.key)}>
