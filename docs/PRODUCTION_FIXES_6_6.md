@@ -1,6 +1,6 @@
 # Production fixes — v6.6.0
 
-This update implements F01–F13 from the [production-readiness audit](PRODUCTION_READINESS_AUDIT.md). The original audit is a record of v6.5.1, not a list of remaining defects in v6.6.0.
+This update improves workspace recovery, comparison responsiveness, accessibility and release validation.
 
 | Finding | Change                                                                                                                                                                                                       |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
