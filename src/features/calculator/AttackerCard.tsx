@@ -1,23 +1,15 @@
 import { ATTRIBUTE_LABEL } from '../../domain/attributes';
 import type { HitSummary } from '../../domain/engine';
-import { ATTRIBUTES, type Attribute } from '../../domain/types';
 import { hrefFor } from '../../app/router';
+import { AttributePicker } from '../../components/AttributePicker';
 import { Field } from '../../components/Field';
-import { NumberInput, Segmented, Select, Switch, TextInput } from '../../components/inputs';
-import { AttributeDot, Card } from '../../components/layout';
+import { NumberInput, Segmented, Switch, TextInput } from '../../components/inputs';
+import { Card } from '../../components/layout';
 import ui from '../../components/ui.module.css';
 import css from './calculator.module.css';
 import { EffectField } from './EffectField';
 import { fmtInt, fmtPct } from './format';
 import { useActiveHit } from './useCalculator';
-
-type AttributeChoice = Attribute | `${Attribute}+`;
-
-/** The game names "+" attributes as their own attribute ("Dark+ Attribute"), so they are listed the same way. */
-const ATTRIBUTE_OPTIONS = ATTRIBUTES.flatMap((a) => [
-  { value: a as AttributeChoice, label: ATTRIBUTE_LABEL[a] },
-  { value: `${a}+` as AttributeChoice, label: `${ATTRIBUTE_LABEL[a]}+` },
-]);
 
 export function AttackerCard({ result }: { result?: HitSummary }) {
   const { hit, setAttacker, confirmInput } = useActiveHit();
@@ -30,7 +22,6 @@ export function AttackerCard({ result }: { result?: HitSummary }) {
       id="attacker"
       title="Attacker"
       collapsible
-      subtitle="Your character — values from the battle info panel (tap your character in battle)."
       summary={[
         a.name.trim() || 'Attacker',
         `${ATTRIBUTE_LABEL[a.attribute]}${a.plus ? '+' : ''} ${a.attackType === 'magic' ? 'magic' : 'physical'}`,
@@ -40,22 +31,20 @@ export function AttackerCard({ result }: { result?: HitSummary }) {
         .filter(Boolean)
         .join(' · ')}
     >
-      <div className={ui.grid}>
+      <Field help="attribute" inputKey="attacker.attribute" group wide>
+        {() => (
+          <AttributePicker
+            ariaLabel="Attribute"
+            value={a.attribute}
+            plus={a.plus}
+            onChange={(attribute) => setAttacker({ attribute })}
+            onPlusChange={(plus) => setAttacker({ plus })}
+          />
+        )}
+      </Field>
+      <div className={`${ui.grid} ${css.identityGrid}`}>
         <Field label="Name (optional)">
           {(id) => <TextInput id={id} value={a.name} placeholder="Attacker name" onChange={(name) => setAttacker({ name })} />}
-        </Field>
-        <Field help="attribute" inputKey="attacker.attribute">
-          {(id) => (
-            <div className={css.attrRow}>
-              <AttributeDot attribute={a.attribute} />
-              <Select<AttributeChoice>
-                id={id}
-                value={a.plus ? `${a.attribute}+` : a.attribute}
-                options={ATTRIBUTE_OPTIONS}
-                onChange={(choice) => setAttacker({ attribute: choice.replace('+', '') as Attribute, plus: choice.endsWith('+') })}
-              />
-            </div>
-          )}
         </Field>
         <Field help="attackType" inputKey="attacker.attackType" group>
           {() => (

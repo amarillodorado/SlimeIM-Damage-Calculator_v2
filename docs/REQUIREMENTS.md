@@ -4,8 +4,10 @@ The tool helps players reproduce a supported hit from independently recorded bat
 
 ## Required behavior
 
-- Start with one blank setup and no observed damage, character name or seeded battle effects.
-- Remember the user's subsequent inputs. Clear resets the current workspace; share links load only the encoded setup.
+- Start first-time visitors with one fully specified, fictional Super Critical example from the application source, with no observed damage. Restore an existing saved workspace instead of replacing it with the example.
+- Clear creates a blank setup and keeps it blank after reopening. Load example restores the demonstration on demand with previous-workspace recovery.
+- Remember the user's subsequent inputs; share links load the entire encoded workspace and selected setup.
+- Show matching ordinary and “+” attribute ATK, damage, resistance and damage-resistance fields directly, without requiring All types. Attribute resistance refers to the attacker’s attribute even when the enemy has a different one.
 - Prefer current Battle ATK for real-hit checks. Ordinary ATK-stat effects must not be counted again.
 - Label pre-battle ATK reconstruction as an estimate; it starts from the troop screen ATK and adds the summed battle ATK %, rounded up once.
 - Keep the recovered Decimal arithmetic and final ceiling; do not snap genuine fractions to nearby integers.
@@ -25,7 +27,7 @@ The skill-point limit is an upper bound on the sum of provider costs: combinatio
 
 Community presets are convenience data and require in-game verification. They are not an authenticated character database.
 
-Providers are saved immediately in browser storage with success/failure feedback. JSON export/import transfers the current provider list; import validates the whole file, updates matching IDs, adds new IDs and preserves unrelated entries. Invalid files leave existing data intact. See [provider backups](PROVIDERS.md) for formats and limits.
+The Provider Library and each Calculator setup's Test pool are saved immediately in browser storage with success/failure feedback. Searchable portrait selection supports batch additions and icon-only list/grid views. Unchecking excludes a provider from that pool; pool removal is immediate and preserves its Library entry. Library deletion requires confirmation and removes references from every pool. Bundled presets are seeded once and can be edited, exported or deleted. JSON export/import transfers Library definitions; import validates the whole file, updates matching IDs, adds new IDs and preserves unrelated entries without automatically adding them to a pool. Invalid files leave existing data intact. See [provider backups](PROVIDERS.md) for formats and limits.
 
 ## Unsupported paths and open checks
 

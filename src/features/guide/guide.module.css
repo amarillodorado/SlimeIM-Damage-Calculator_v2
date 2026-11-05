@@ -1,3 +1,17 @@
+.workedExample {
+  min-width: 0;
+}
+.workedExample > summary {
+  cursor: pointer;
+  padding: var(--space-3);
+  font-weight: 700;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-m);
+}
+.workedExample[open] > summary {
+  margin-bottom: var(--space-4);
+}
+
 .page {
   max-width: 1280px;
   margin: 0 auto;

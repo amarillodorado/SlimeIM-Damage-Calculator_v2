@@ -1,4 +1,4 @@
-import { normalizeWorkspace } from '../domain/normalize';
+import { MAX_WORKSPACE_BYTES, parseWorkspaceValue, workspaceEnvelope } from '../domain/workspaceFiles';
 import type { Workspace } from '../domain/types';
 
 /**
@@ -6,6 +6,7 @@ import type { Workspace } from '../domain/types';
  * `z` prefix: deflate-compressed JSON; `j` prefix: plain JSON (browsers without CompressionStream).
  */
 
+export const MAX_SHARE_CHARACTERS = 1_500_000;
 const toBase64Url = (bytes: Uint8Array) => {
   let bin = '';
   bytes.forEach((b) => (bin += String.fromCharCode(b)));
@@ -14,28 +15,35 @@ const toBase64Url = (bytes: Uint8Array) => {
 const fromBase64Url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
 
 async function pipe(bytes: Uint8Array, stream: CompressionStream | DecompressionStream): Promise<Uint8Array> {
-  const out = new Blob([bytes as BlobPart]).stream().pipeThrough(stream);
-  return new Uint8Array(await new Response(out).arrayBuffer());
-}
-
-/** Drop ids so links stay short; they are regenerated on load. */
-function compact(ws: Workspace) {
-  return {
-    highlightRequired: ws.highlightRequired ?? true,
-    enemy: ws.enemy,
-    hits: ws.hits.map(({ attacker, attack, effects, effectEntries, confirmed, observed }) => ({
-      attacker,
-      attack,
-      observed,
-      effects: Object.fromEntries(Object.entries(effects).filter(([, value]) => value)),
-      effectEntries,
-      confirmed,
-    })),
-  };
+  const reader = new Blob([bytes as BlobPart]).stream().pipeThrough(stream).getReader();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > MAX_WORKSPACE_BYTES) {
+        await reader.cancel();
+        throw new Error('Workspace exceeds the 1 MB limit.');
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const output = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    output.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return output;
 }
 
 export async function encodeWorkspace(ws: Workspace): Promise<string> {
-  const json = new TextEncoder().encode(JSON.stringify(compact(ws)));
+  const json = new TextEncoder().encode(JSON.stringify(workspaceEnvelope(ws)));
+  if (json.length > MAX_WORKSPACE_BYTES) throw new Error('Workspace exceeds the 1 MB limit. Combine same-sign sources or export fewer setups.');
   if (typeof CompressionStream !== 'undefined') {
     try {
       return 'z' + toBase64Url(await pipe(json, new CompressionStream('deflate-raw')));
@@ -48,9 +56,11 @@ export async function encodeWorkspace(ws: Workspace): Promise<string> {
 
 export async function decodeWorkspace(code: string): Promise<Workspace | undefined> {
   try {
+    if (code.length > MAX_SHARE_CHARACTERS || !/^[jz][A-Za-z0-9_-]+$/.test(code)) return undefined;
     const bytes = fromBase64Url(code.slice(1));
+    if (bytes.length > MAX_WORKSPACE_BYTES) return undefined;
     const json = code[0] === 'z' ? await pipe(bytes, new DecompressionStream('deflate-raw')) : bytes;
-    return normalizeWorkspace(JSON.parse(new TextDecoder().decode(json)));
+    return parseWorkspaceValue(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(json)), true);
   } catch {
     return undefined;
   }

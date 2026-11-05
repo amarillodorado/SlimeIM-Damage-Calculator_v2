@@ -7,6 +7,7 @@ import ui from '../../components/ui.module.css';
 import css from './calculator.module.css';
 import { useWorkspace } from '../../state/workspaceContext';
 import { useActiveHit } from './useCalculator';
+import { MAX_EFFECT_SOURCES } from '../../domain/workspaceFiles';
 
 /**
  * One buff or debuff of the hit being edited: the total of that type, labelled
@@ -30,10 +31,18 @@ export function EffectField({ type }: { type: EffectTypeId }) {
     <Field
       label={label}
       group={separate}
-      info={{ label, game: t.examples, where: t.where, use: t.effect, confidence: t.confidence }}
+      info={{
+        label,
+        game: t.examples,
+        where: t.where,
+        use: superType
+          ? `Super mode is selected: positive contributions are multiplied by ${['critDmg', 'critResDown'].includes(type) ? '1.3' : '1.2'}; negative contributions stay unchanged. ${t.effect}`
+          : t.effect,
+        confidence: t.confidence,
+      }}
       note={
         separate
-          ? `${['critDmg', 'critResDown'].includes(type) ? 'Super Critical boosts bonuses by 30%' : 'Super boosts bonuses by 20%'}; keep positive and negative effects separate. Effects with the same sign can share one entry.${type.endsWith('ResDown') ? ' Enter resistance UP as a negative value.' : ' Enter power DOWN as a negative value.'}`
+          ? `Positive totals ×${['critDmg', 'critResDown'].includes(type) ? '1.3' : '1.2'}; negative totals unchanged. Use another source only to keep opposite signs separate. Same-sign values can be added together.${type.endsWith('ResDown') ? ' Resistance UP is negative.' : ' Power DOWN is negative.'}`
           : undefined
       }
     >
@@ -73,9 +82,16 @@ export function EffectField({ type }: { type: EffectTypeId }) {
                 </button>
               </div>
             ))}
-            <button type="button" className={ui.button} onClick={() => setEffectEntries(type, [...entries, 0])}>
-              Add {label} source
+            <button
+              type="button"
+              className={ui.button}
+              aria-label={`Add ${label} source`}
+              disabled={entries.length >= MAX_EFFECT_SOURCES}
+              onClick={() => setEffectEntries(type, [...entries, 0])}
+            >
+              Add source
             </button>
+            {entries.length >= MAX_EFFECT_SOURCES && <p className={ui.note}>Limit: {MAX_EFFECT_SOURCES} sources. Combine same-sign values to make room.</p>}
           </div>
         ) : (
           <NumberInput

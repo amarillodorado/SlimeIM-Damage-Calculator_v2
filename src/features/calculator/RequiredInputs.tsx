@@ -14,10 +14,7 @@ export function RequiredInputs() {
         checked={workspace.highlightRequired !== false}
         onChange={(value) => dispatch({ type: 'setHighlightRequired', value })}
       />
-      <p>
-        Confirm each required choice, including preselected choices. Enter a value or use Confirm value for numeric inputs. Calculations start automatically
-        when this setup is complete.
-      </p>
+      <p>Confirm each required choice, including preselected choices. Enter a value or use Confirm value for numeric inputs.</p>
       <div className={ui.guidanceStatus}>
         <span>
           {missing.length
@@ -30,7 +27,6 @@ export function RequiredInputs() {
           </button>
         )}
       </div>
-      {workspace.highlightRequired === false && <p>Highlighting is off. Required-input checks still apply.</p>}
     </section>
   );
 }

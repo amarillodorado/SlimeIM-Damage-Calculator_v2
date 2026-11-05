@@ -8,6 +8,8 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5173 },
   test: {
+    // Keep per-file isolation without the repeated Windows child-process startup cost.
+    pool: 'threads',
     environment: 'node',
     setupFiles: ['src/test/setup.ts'],
     css: { modules: { classNameStrategy: 'non-scoped' } },

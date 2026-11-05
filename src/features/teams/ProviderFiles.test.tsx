@@ -23,8 +23,15 @@ function providerFile(providers: SupportUnit[], text?: string): File {
   return file;
 }
 
-const stored = (): SupportUnit[] => JSON.parse(localStorage.getItem(STORAGE_KEYS.units) ?? '[]');
-const show = () => render(<WorkspaceProvider><TeamsPage /></WorkspaceProvider>);
+const stored = (): SupportUnit[] => JSON.parse(localStorage.getItem(STORAGE_KEYS.providerLibrary)!).providers;
+const seed = (providers: SupportUnit[]) =>
+  localStorage.setItem(STORAGE_KEYS.providerLibrary, JSON.stringify({ version: 1, providers, pools: {}, views: { pool: 'list', library: 'grid' } }));
+const show = () =>
+  render(
+    <WorkspaceProvider>
+      <TeamsPage />
+    </WorkspaceProvider>,
+  );
 
 const originalCreateURL = Object.getOwnPropertyDescriptor(URL, 'createObjectURL');
 const originalRevokeURL = Object.getOwnPropertyDescriptor(URL, 'revokeObjectURL');
@@ -43,12 +50,13 @@ describe('buff provider file controls', () => {
   it('merges an import, saves it immediately and imports the same file again without duplicates', async () => {
     const original = unit('edit-me', 'Old build');
     const unrelated = unit('keep-me', 'Unrelated build', 15);
-    localStorage.setItem(STORAGE_KEYS.units, JSON.stringify([original, unrelated]));
+    seed([original, unrelated]);
     const updated = { ...unit('edit-me', 'Updated build', -10), skillCost: 65, note: 'Signed effect retained' };
     const added = unit('add-me', 'New build', 50);
     const user = userEvent.setup();
     show();
-    expect(screen.getByText('Saved automatically in this browser for this website address.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Add from Library' }));
+    expect(screen.getByText('Library and test pools saved automatically in this browser.')).toBeInTheDocument();
     const upload = screen.getByLabelText('Import buff providers from JSON');
     const file = providerFile([updated, added]);
     await user.upload(upload, file);
@@ -66,24 +74,28 @@ describe('buff provider file controls', () => {
 
   it('reports a malformed file without altering existing providers or their saved data', async () => {
     const existing = unit('keep-me', 'Keep this build');
-    localStorage.setItem(STORAGE_KEYS.units, JSON.stringify([existing]));
+    seed([existing]);
     const user = userEvent.setup();
     show();
-    const before = localStorage.getItem(STORAGE_KEYS.units);
+    await user.click(screen.getByRole('button', { name: 'Add from Library' }));
+    const before = localStorage.getItem(STORAGE_KEYS.providerLibrary);
     await user.upload(screen.getByLabelText('Import buff providers from JSON'), providerFile([], '{"providers":'));
     await waitFor(() => {
       expect(screen.getAllByRole('alert').some((element) => /JSON/i.test(element.textContent ?? ''))).toBe(true);
     });
     expect(screen.getByText('Keep this build')).toBeInTheDocument();
-    expect(localStorage.getItem(STORAGE_KEYS.units)).toBe(before);
+    expect(localStorage.getItem(STORAGE_KEYS.providerLibrary)).toBe(before);
     expect(stored()).toEqual([existing]);
   });
 
   it('exports the current provider pool as versioned JSON with costs, scopes and signed effects', async () => {
     const providers = [unit('one', 'First build', -15), unit('two', 'Second build', 50)];
-    localStorage.setItem(STORAGE_KEYS.units, JSON.stringify(providers));
+    seed(providers);
     let exported: Blob | undefined;
-    const createURL = vi.fn((blob: Blob) => { exported = blob; return 'blob:provider-download'; });
+    const createURL = vi.fn((blob: Blob) => {
+      exported = blob;
+      return 'blob:provider-download';
+    });
     const revokeURL = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: createURL });
     Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: revokeURL });
@@ -93,6 +105,7 @@ describe('buff provider file controls', () => {
     });
     const user = userEvent.setup();
     show();
+    await user.click(screen.getByRole('button', { name: 'Add from Library' }));
     await user.click(screen.getByRole('button', { name: 'Export providers' }));
     expect(createURL).toHaveBeenCalledOnce();
     expect(downloads).toEqual([{ href: 'blob:provider-download', filename: 'slimeim-buff-providers.json' }]);
@@ -107,9 +120,41 @@ describe('buff provider file controls', () => {
     await waitFor(() => expect(revokeURL).toHaveBeenCalledWith('blob:provider-download'), { timeout: 2000 });
   });
 
-  it('disables export for an empty provider pool', () => {
+  it('disables export for an empty provider library', async () => {
+    seed([]);
+    const user = userEvent.setup();
     show();
+    await user.click(screen.getByRole('button', { name: 'Add from Library' }));
     expect(screen.getByRole('button', { name: 'Export providers' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Import providers' })).toBeEnabled();
+  });
+
+  it('exports a bundled provider directly without adding it to a test pool', async () => {
+    let exported: Blob | undefined;
+    Object.defineProperty(URL, 'createObjectURL', {
+      value: (blob: Blob) => {
+        exported = blob;
+        return 'blob:bundled-provider';
+      },
+      configurable: true,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true });
+    const downloads: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      downloads.push(this.download);
+    });
+    const user = userEvent.setup();
+    show();
+    await user.click(screen.getByRole('button', { name: 'Add from Library' }));
+    await user.click(screen.getByRole('button', { name: 'Export Violet WM' }));
+    const text = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.readAsText(exported!);
+    });
+    expect(JSON.parse(text).providers).toEqual([expect.objectContaining({ id: 'violet-wm', icon: 'units/VioletHA2023_5_CharaPartyM.png', skillCost: 80 })]);
+    expect(downloads).toEqual(['slimeim-buff-provider.json']);
+    expect(screen.queryByText(/^Exported \d+ buff provider/)).not.toBeInTheDocument();
+    expect(Object.values(JSON.parse(localStorage.getItem(STORAGE_KEYS.providerLibrary)!).pools).flat()).toEqual([]);
   });
 });

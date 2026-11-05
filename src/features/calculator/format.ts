@@ -1,6 +1,7 @@
 import { ATTRIBUTE_LABEL } from '../../domain/attributes';
 import type { HitSummary } from '../../domain/engine';
 import type { Hit, Workspace } from '../../domain/types';
+import { getMissingRequirements } from '../../domain/requirements';
 
 export const fmtInt = (n: number) => Math.round(n).toLocaleString('en-US');
 export const fmtFactor = (f: number) => `×${f >= 10 ? f.toFixed(1) : f.toFixed(2)}`;
@@ -35,13 +36,26 @@ export function summaryText(ws: Workspace, results: Map<string, HitSummary>): st
   const e = ws.enemy;
   const lines = [`Slime IM Damage Calc — ${e.name || 'Enemy'} (${ATTRIBUTE_LABEL[e.attribute]}, DEF ${fmtInt(e.def)}, res ${e.physRes}% / ${e.magicRes}%)`];
   let total = 0;
+  let complete = 0;
   ws.hits.forEach((h, i) => {
     const r = results.get(h.id);
-    if (!r) return;
+    const missing = getMissingRequirements(h, e);
+    if (missing.length || !r?.steps.length) {
+      lines.push(
+        `${hitLabel(h, i)}: ${missing.length ? `Incomplete — ${missing.length} required inputs remaining` : 'Calculation unavailable — check inputs'}`,
+      );
+      return;
+    }
+    complete++;
     total += r.damage;
     const tags = hitTags(h);
     lines.push(`${hitLabel(h, i)}: ${fmtInt(r.damage)} (${fmtInt(r.min)}–${fmtInt(r.max)}) · ${attackLabel(h)}${tags.length ? ' · ' + tags.join(', ') : ''}`);
   });
-  if (ws.hits.length > 1) lines.push(`Total: ${fmtInt(total)}`);
+  if (ws.hits.length > 1)
+    lines.push(
+      complete === ws.hits.length
+        ? `Combined damage of ${complete} setups: ${fmtInt(total)}`
+        : `Partial damage of ${complete} complete setups: ${fmtInt(total)}; ${ws.hits.length - complete} incomplete or unavailable setups excluded.`,
+    );
   return lines.join('\n');
 }

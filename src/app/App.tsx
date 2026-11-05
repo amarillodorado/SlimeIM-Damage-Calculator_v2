@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { Icon, type IconName } from '../components/Icon';
 import { CalculatorPage } from '../features/calculator/CalculatorPage';
@@ -6,10 +6,11 @@ import { decodeWorkspace } from '../state/share';
 import { useWorkspace } from '../state/workspaceContext';
 import styles from './app.module.css';
 import { hrefFor, useHashRoute, type Page } from './router';
+import { PageErrorBoundary } from '../components/PageErrorBoundary';
+import { UndoNotice } from '../components/UndoNotice';
 
 // The guide and the team simulator are only loaded when opened.
-const GuidePage = lazy(() => import('../features/guide/GuidePage'));
-const TeamsPage = lazy(() => import('../features/teams/TeamsPage'));
+const createPages = () => ({ GuidePage: lazy(() => import('../features/guide/GuidePage')), TeamsPage: lazy(() => import('../features/teams/TeamsPage')) });
 
 const NAV: { page: Page; label: string; icon: IconName }[] = [
   { page: 'calculator', label: 'Calculator', icon: 'calculator' },
@@ -25,7 +26,10 @@ const TITLES: Record<Page, string> = {
 
 export function App() {
   const { route, navigate } = useHashRoute();
-  const { dispatch } = useWorkspace();
+  const { dispatch, notice, dismissNotice } = useWorkspace();
+  const [{ GuidePage, TeamsPage }, setPages] = useState(createPages);
+  const [retry, setRetry] = useState(0);
+  const [shareError, setShareError] = useState('');
   const analyticsPath = `/${route.page}`;
 
   // A share link (#/calculator?s=…) replaces the current workspace once.
@@ -34,7 +38,13 @@ export function App() {
     let cancelled = false;
     void decodeWorkspace(route.share).then((ws) => {
       if (cancelled) return;
-      if (ws) dispatch({ type: 'load', workspace: ws });
+      if (ws) {
+        dispatch({ type: 'load', workspace: ws });
+        setShareError('');
+      } else
+        setShareError(
+          'This shared workspace is invalid, unsupported or too large. Your current workspace has been preserved. Ask for a new link or import a workspace backup.',
+        );
       history.replaceState(null, '', hrefFor('calculator'));
       navigate('calculator');
     });
@@ -59,7 +69,7 @@ export function App() {
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={34} height={34} />
             <span className={styles.brandText}>
               <strong>Slime IM Damage Calc</strong>
-              <span>ISEKAI Memories · v6.5.1</span>
+              <span>ISEKAI Memories · v6.6.1</span>
             </span>
           </a>
           <nav className={styles.nav} aria-label="Main">
@@ -74,11 +84,25 @@ export function App() {
       </header>
 
       <main id="main" className={styles.main} tabIndex={-1}>
-        <Suspense fallback={<p className={styles.loading}>Loading…</p>}>
-          {route.page === 'calculator' && <CalculatorPage />}
-          {route.page === 'teams' && <TeamsPage />}
-          {route.page === 'guide' && <GuidePage section={route.section} />}
-        </Suspense>
+        {shareError && (
+          <p role="alert" className={styles.loading}>
+            {shareError}
+          </p>
+        )}
+        <UndoNotice notice={notice} onDismiss={dismissNotice} />
+        <PageErrorBoundary
+          key={`${route.page}-${retry}`}
+          onRetry={() => {
+            setPages(createPages());
+            setRetry((n) => n + 1);
+          }}
+        >
+          <Suspense fallback={<p className={styles.loading}>Loading…</p>}>
+            {route.page === 'calculator' && <CalculatorPage />}
+            {route.page === 'teams' && <TeamsPage />}
+            {route.page === 'guide' && <GuidePage section={route.section} />}
+          </Suspense>
+        </PageErrorBoundary>
         <footer className={styles.footer}>Fan-made tool, not affiliated with Bandai Namco.</footer>
       </main>
 

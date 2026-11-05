@@ -1,6 +1,6 @@
 import { blankAttack, blankAttacker, blankEnemy, defaultWorkspace, newId } from './defaults';
 import { EFFECT_BY_ID } from './effects';
-import { MAX_PROVIDERS, MAX_PROVIDER_COST, MAX_PROVIDER_EFFECTS, MAX_PROVIDER_EFFECT_VALUE, MAX_PROVIDER_NAME, MAX_PROVIDER_NOTE } from './providerLimits';
+import { MAX_PROVIDER_COST, MAX_PROVIDER_EFFECTS, MAX_PROVIDER_EFFECT_VALUE, MAX_PROVIDER_NAME, MAX_PROVIDER_NOTE } from './providerLimits';
 import type { SupportUnit, UnitEffect } from './teams';
 import {
   ATTRIBUTES,
@@ -77,8 +77,8 @@ function attack(raw: unknown): Attack {
     // Preserve an old explicit nonstandard orb power for review, not as a silent baseline.
     normalPowerOverride,
     variant: oneOf(raw.variant, ['normal', 'ex', 'ultimate'] as const, b.variant),
-    // Missing, empty or invalid saved values fall back to the 40% default.
-    ultimateBonus: num(raw.ultimateBonus, b.ultimateBonus ?? 40, -100, 1000),
+    // An explicitly unknown value stays unknown; missing legacy data gets the default.
+    ultimateBonus: raw.ultimateBonus === null ? null : num(raw.ultimateBonus, b.ultimateBonus ?? 40, -100, 1000),
     target: oneOf(raw.target, ['single', 'all'] as const, b.target),
     comboMultiplier: num(raw.comboMultiplier, 1, 0, 1000),
     matchup: oneOf(raw.matchup, ['auto', 'advantage', 'neutral', 'disadvantage'] as const, b.matchup),
@@ -154,7 +154,8 @@ export function normalizeHit(raw: unknown, enemyOfHit: Enemy = blankEnemy()): Hi
     for (const type of EFFECT_TYPE_IDS) {
       const rawEntries = r.effectEntries[type];
       if (!Array.isArray(rawEntries) || EFFECT_BY_ID[type].category === 'noEffect') continue;
-      const entries = rawEntries.slice(0, 100).map((entry) => num(entry, 0, -100000, 100000));
+      // Preserve older over-limit saves; the editor blocks additions and file transfer requests consolidation.
+      const entries = rawEntries.map((entry) => num(entry, 0, -100000, 100000));
       effectEntries[type] = entries;
       const total = entries.reduce((sum, value) => sum + value, 0);
       if (total === 0) delete totals[type];
@@ -204,13 +205,14 @@ export function normalizeWorkspace(raw: unknown): Workspace {
 
 export function normalizeUnits(raw: unknown): SupportUnit[] {
   if (!Array.isArray(raw)) return [];
-  const units = raw.slice(0, MAX_PROVIDERS).flatMap((u): SupportUnit[] => {
+  const units = raw.flatMap((u): SupportUnit[] => {
     if (!isObj(u) || typeof u.name !== 'string') return [];
     const t = isObj(u.triggers) ? u.triggers : {};
     return [
       {
         id: str(u.id, '', 64) || newId(),
         name: str(u.name, 'Unit', MAX_PROVIDER_NAME),
+        ...(u.enabled === undefined ? {} : { enabled: bool(u.enabled, true) }),
         skillCost: num(u.skillCost, 0, 0, MAX_PROVIDER_COST),
         icon: typeof u.icon === 'string' && /^units\/[\w.-]+\.png$/.test(u.icon) ? u.icon : undefined,
         effects: Array.isArray(u.effects)

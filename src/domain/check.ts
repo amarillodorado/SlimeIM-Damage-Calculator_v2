@@ -63,11 +63,11 @@ export function checkObserved(input: HitInput, observed: number): CheckResult {
       if (Math.abs(gap / f.factor - 1) <= 0.015)
         suggestions.push(`A factor near ×${f.factor} could explain part of the gap — check ${f.causes}. This is a possibility, not an identified cause.`);
     }
-    const pct = Math.round((gap - 1) * 1000) / 10;
+    const pct = Math.round(Math.abs(ratio - 1) * 1000) / 10;
     suggestions.push(
       status === 'high'
         ? `The observed hit is about ${pct}% above the nominal prediction. Check stats, effect timing and eligibility, equipment, EX abilities and soul effects; do not add an unsupported bonus just to fit the number.`
-        : `The nominal prediction is about ${pct}% above the observed hit. Check stats, inactive effects and double counting (for example detailed stats and the battle effect list).`,
+        : `The observed hit is about ${pct}% below the nominal prediction. Check stats, inactive effects and double counting (for example detailed stats and the battle effect list).`,
     );
   }
   return { status, rolls, min, max, ratio, suggestions };

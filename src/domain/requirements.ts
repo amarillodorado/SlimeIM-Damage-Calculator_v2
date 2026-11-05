@@ -67,7 +67,13 @@ export function getRequirements(hit: Hit, enemy: Enemy): Requirement[] {
   add('attack.aegis', 'Aegis');
   if (a.tau.active) {
     if (!a.plus) add('attacker.attribute', 'Attacker attribute', 'choice', 'True Attribute Unbound requires a “+” attribute, or turn it off.');
-    if (k.popup === 'none') add('attack.popup', 'Weakness result', 'choice', 'Select Weak Point or Super Weak Point under Weakness result for True Attribute Unbound, or turn it off.');
+    if (k.popup === 'none')
+      add(
+        'attack.popup',
+        'Weakness result',
+        'choice',
+        'Select Weak Point or Super Weak Point under Weakness result for True Attribute Unbound, or turn it off.',
+      );
     else if (a.plus) {
       const superWeak = k.popup === 'superWeak';
       const factor = superWeak ? a.tau.superWeak : a.tau.weak;

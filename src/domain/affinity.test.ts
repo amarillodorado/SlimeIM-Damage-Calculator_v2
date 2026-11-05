@@ -98,9 +98,9 @@ describe('Ultimate addition default', () => {
     expect(normalizeWorkspace(JSON.parse(JSON.stringify(ws))).hits[0]!.attack.ultimateBonus).toBe(bonus);
   });
 
-  it('fills the 40% default for missing, empty or invalid saved input', () => {
+  it('preserves an explicitly unknown bonus and defaults missing or invalid legacy input to 40%', () => {
     const { ws } = setup(true, 'ultimate', null);
-    expect(normalizeWorkspace(JSON.parse(JSON.stringify(ws))).hits[0]!.attack.ultimateBonus).toBe(40);
+    expect(normalizeWorkspace(JSON.parse(JSON.stringify(ws))).hits[0]!.attack.ultimateBonus).toBeNull();
     const raw = { ...ws, hits: [{ ...ws.hits[0], attack: { ...ws.hits[0]!.attack, ultimateBonus: undefined } }] };
     expect(normalizeWorkspace(raw).hits[0]!.attack.ultimateBonus).toBe(40);
     expect(normalizeWorkspace({ ...raw, hits: [{ attack: { ultimateBonus: 'unknown' } }] }).hits[0]!.attack.ultimateBonus).toBe(40);

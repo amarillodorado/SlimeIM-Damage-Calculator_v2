@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SupportUnit } from './teams';
 import { exportProviderFile, mergeProviders, parseProviderFile } from './providerFiles';
-import { MAX_PROVIDERS, MAX_PROVIDER_EFFECTS, MAX_PROVIDER_FILE_BYTES, MAX_PROVIDER_NAME } from './providerLimits';
+import { MAX_PROVIDER_EFFECTS, MAX_PROVIDER_NAME } from './providerLimits';
 
 const unit = (id = 'a', patch: Partial<SupportUnit> = {}): SupportUnit => ({
   id,
@@ -51,10 +51,17 @@ describe('portable provider files', () => {
 
   it('rejects invalid identity and cost values instead of truncating or coercing them', () => {
     const invalid = [
-      unit('', {}), unit(' '.repeat(2)), unit('a'.repeat(65)),
-      unit('a', { name: ' ' }), unit('a', { name: 'n'.repeat(MAX_PROVIDER_NAME + 1) }),
-      unit('a', { skillCost: -1 }), unit('a', { skillCost: 1.5 }), unit('a', { skillCost: 10000 }),
-      { ...unit(), skillCost: '80' }, { ...unit(), skillCost: null }, { ...unit(), futureData: 'do not lose this' },
+      unit('', {}),
+      unit(' '.repeat(2)),
+      unit('a'.repeat(65)),
+      unit('a', { name: ' ' }),
+      unit('a', { name: 'n'.repeat(MAX_PROVIDER_NAME + 1) }),
+      unit('a', { skillCost: -1 }),
+      unit('a', { skillCost: 1.5 }),
+      unit('a', { skillCost: 10000 }),
+      { ...unit(), skillCost: '80' },
+      { ...unit(), skillCost: null },
+      { ...unit(), futureData: 'do not lose this' },
     ];
     for (const entry of invalid) expect(() => parse([entry])).toThrow();
     expect(() => parseProviderFile('[{"id":"a","name":"A","skillCost":1e999,"effects":[]}]')).toThrow(/skillCost/);
@@ -63,9 +70,14 @@ describe('portable provider files', () => {
   it('rejects unknown effect types, invalid restrictions and nonnumeric or out-of-range effect values', () => {
     const base = { type: 'soulDmg', value: 20, attribute: 'any' };
     const invalid = [
-      { ...base, type: 'future-buff' }, { ...base, value: '20' }, { ...base, value: 100001 },
-      { ...base, value: -100001 }, { ...base, attribute: 'banana' }, { ...base, attackType: 'both' },
-      { ...base, target: 'enemy' }, { ...base, unknown: 'extra' },
+      { ...base, type: 'future-buff' },
+      { ...base, value: '20' },
+      { ...base, value: 100001 },
+      { ...base, value: -100001 },
+      { ...base, attribute: 'banana' },
+      { ...base, attackType: 'both' },
+      { ...base, target: 'enemy' },
+      { ...base, unknown: 'extra' },
     ];
     for (const entry of invalid) expect(() => parse([{ ...unit(), effects: [entry] }])).toThrow();
     expect(() => parse([{ ...unit(), effects: null }])).toThrow(/effects/);
@@ -73,21 +85,24 @@ describe('portable provider files', () => {
 
   it('validates outcome flags, notes and local-only image paths', () => {
     const invalid = [
-      { ...unit(), triggers: { crit: 1 } }, { ...unit(), triggers: { superCritical: true } },
-      { ...unit(), triggers: null }, unit('a', { icon: 'https://example.com/p.png' }),
-      unit('a', { icon: 'units/../secret.png' }), unit('a', { note: 'x'.repeat(121) }),
+      { ...unit(), triggers: { crit: 1 } },
+      { ...unit(), triggers: { superCritical: true } },
+      { ...unit(), triggers: null },
+      unit('a', { icon: 'https://example.com/p.png' }),
+      unit('a', { icon: 'units/../secret.png' }),
+      unit('a', { note: 'x'.repeat(121) }),
     ];
     for (const entry of invalid) expect(() => parse([entry])).toThrow();
   });
 
-  it('checks actual UTF-8 file size before parsing', () => {
-    const oversized = JSON.stringify({ note: 'é'.repeat(MAX_PROVIDER_FILE_BYTES / 2) });
-    expect(oversized.length).toBeLessThan(MAX_PROVIDER_FILE_BYTES);
-    expect(() => parseProviderFile(oversized)).toThrow(/too large/);
+  it('round-trips a large Library without provider-count or backup-size caps', () => {
+    const providers = Array.from({ length: 5000 }, (_, index) => unit(String(index)));
+    const backup = exportProviderFile(providers);
+    expect(new TextEncoder().encode(backup).byteLength).toBeGreaterThan(1024 * 1024);
+    expect(parseProviderFile(backup).map((provider) => provider.id)).toEqual(providers.map((provider) => provider.id));
   });
 
-  it('rejects over-limit arrays and duplicate IDs without silently dropping records', () => {
-    expect(() => parse(Array.from({ length: MAX_PROVIDERS + 1 }, (_, index) => unit(String(index))))).toThrow(/at most 60/);
+  it('rejects duplicate IDs and invalid effect lists without silently dropping records', () => {
     expect(() => parse([unit('same'), unit('same', { name: 'Different provider' })])).toThrow(/duplicate ID/);
     expect(() => parse([unit('effects', { effects: Array.from({ length: MAX_PROVIDER_EFFECTS + 1 }, () => unit().effects[0]!) })])).toThrow(/at most 20/);
   });
@@ -104,7 +119,8 @@ describe('portable provider files', () => {
   it('updates matching IDs in place, appends new providers and never mutates either source list', () => {
     const current = [unit('a'), unit('other')];
     const incoming = [unit('a', { skillCost: 40, effects: [] }), unit('new')];
-    const beforeCurrent = structuredClone(current), beforeIncoming = structuredClone(incoming);
+    const beforeCurrent = structuredClone(current),
+      beforeIncoming = structuredClone(incoming);
     const merged = mergeProviders(current, incoming);
     expect(merged.providers.map((provider) => provider.id)).toEqual(['a', 'other', 'new']);
     expect(merged.providers[0]!.skillCost).toBe(40);
@@ -121,14 +137,14 @@ describe('portable provider files', () => {
     expect(merged.added).toBe(1);
   });
 
-  it('rejects a merged library above the limit atomically while allowing updates at capacity', () => {
-    const current = Array.from({ length: MAX_PROVIDERS }, (_, index) => unit(String(index)));
+  it('appends to large Libraries while preserving existing entries and allowing updates', () => {
+    const current = Array.from({ length: 250 }, (_, index) => unit(String(index)));
     const before = structuredClone(current);
-    expect(() => mergeProviders(current, [unit('additional')])).toThrow(/exceed 60/);
+    expect(mergeProviders(current, [unit('additional')]).providers).toHaveLength(251);
     expect(current).toEqual(before);
     const update = mergeProviders(current, [unit('0', { skillCost: 1 })]);
-    expect(update.providers).toHaveLength(MAX_PROVIDERS);
+    expect(update.providers).toHaveLength(250);
     expect(update.updated).toBe(1);
-    expect(mergeProviders(current, []).providers).toHaveLength(MAX_PROVIDERS);
+    expect(mergeProviders(current, []).providers).toHaveLength(250);
   });
 });

@@ -62,7 +62,7 @@ function SpecialHit({
       {() => (
         <div className={`${css.special} ${active ? css.specialOn : ''}`}>
           <div className={css.specialControl}>{control}</div>
-          {active && <div className={ui.grid}>{children}</div>}
+          {active && <div className={css.specialFields}>{children}</div>}
         </div>
       )}
     </Field>
@@ -169,7 +169,12 @@ export function AttackCard() {
             )}
           </Field>
         )}
-        <Field label="Target" inputKey="attack.target" group>
+        <Field
+          label="Target"
+          inputKey="attack.target"
+          group
+          note="Select the attack’s actual target type. This controls single-target/AoE effects; it adds no multiplier on its own."
+        >
           {() => (
             <Segmented<TargetType>
               ariaLabel="Target"
@@ -187,8 +192,7 @@ export function AttackCard() {
       {k.kind === 'soul' && (
         <div className={css.stack}>
           <p className={ui.note}>
-            Ordinary soul base power: <b>{k.normalPowerOverride ? `${k.power}% (override)` : '100%'}</b>. The game may not show damage details for this
-            attack.
+            Ordinary soul base power: <b>{k.normalPowerOverride ? `${k.power}% (override)` : '100%'}</b>. The game may not show damage details for this attack.
           </p>
           <Switch
             label="Override normal soul power"
@@ -297,15 +301,20 @@ export function AttackCard() {
               title="Critical"
               active={k.crit}
               control={
-                <Segmented ariaLabel="Critical" value={!k.crit ? 'off' : k.superCrit ? 'super' : 'normal'} options={critOptions} onChange={(c) => setAttack({ crit: c !== 'off', superCrit: c === 'super' })} />
+                <Segmented
+                  ariaLabel="Critical"
+                  value={!k.crit ? 'off' : k.superCrit ? 'super' : 'normal'}
+                  options={critOptions}
+                  onChange={(c) => setAttack({ crit: c !== 'off', superCrit: c === 'super' })}
+                />
               }
             >
               <EffectField type="critDmg" />
               <EffectField type="critResDown" />
               {k.superCrit && (
-                <p className={ui.note}>
-                  Super Critical uses a 1.5 base factor and boosts Critical Power UP and enemy Critical Resistance DOWN bonuses by 30%.
-                  Power DOWN and resistance UP keep their original values. These verified constants apply automatically.
+                <p className={`${ui.note} ${css.specialNote}`}>
+                  Super Critical uses a 1.5 base factor and boosts Critical Power UP and enemy Critical Resistance DOWN bonuses by 30%. Power DOWN and
+                  resistance UP keep their original values. These verified constants apply automatically.
                 </p>
               )}
             </SpecialHit>
@@ -333,7 +342,7 @@ export function AttackCard() {
               active={k.aegis !== 'off'}
               control={<Segmented ariaLabel="Aegis" value={k.aegis} options={procOptions} onChange={(aegis) => setAttack({ aegis })} />}
             >
-              <Field help="ownDef" inputKey="attacker.ownDef">
+              <Field help="ownDef" inputKey="attacker.ownDef" wide>
                 {(id) => (
                   <NumberInput
                     id={id}

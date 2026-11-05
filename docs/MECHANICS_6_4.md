@@ -10,10 +10,10 @@ The investigation uses the supplied official Android 5.0.20 ARM64 client and the
 
 The newly supplied official `MasterBattleDefineValue` payload confirms both coefficients:
 
-| Key | Row ID | FlatBuffer row offset | Native value | Factor |
-|---|---:|---|---:|---:|
-| `battle.rate.critical.common.coefficient` | 8700000008 | `0x1d4` | 15000 | 1.5 |
-| `battle.rate.critical.up.effect.coefficient` | 8700000009 | `0x16c` | 13000 | 1.3 |
+| Key                                          |     Row ID | FlatBuffer row offset | Native value | Factor |
+| -------------------------------------------- | ---------: | --------------------- | -----------: | -----: |
+| `battle.rate.critical.common.coefficient`    | 8700000008 | `0x1d4`               |        15000 |    1.5 |
+| `battle.rate.critical.up.effect.coefficient` | 8700000009 | `0x16c`               |        13000 |    1.3 |
 
 Both rows use release label `3.0.20_system_common`. The table has 12 rows. Its 1,352-byte decrypted body passed its embedded SHA-256 check: `9fe88ad9751557f7654f4246f1d52f3dc15f22a82b30d4f6fb8a17e9c35a1af2`. The source 2,611-byte bundle has SHA-256 `698f43f626c6fa694cb9defaf6a70022b2cec36c8df9d821d2fb872c7a8d3082`.
 
@@ -36,12 +36,12 @@ The new override payload has **475 rows** and a different content hash from the 
 
 **Confirmed in code:** the ordinary and enhanced families multiply independently. Choosing a “+” attacker enables its matching additional fields under **All types**. All seven attributes are supported.
 
-| Field family | Ordinary Dark parameter | Additional Dark+ parameter | Where it applies |
-|---|---:|---:|---|
-| ATK UP | 315 | 1507 | Before DEF subtraction |
-| Resistance | 416 | 1514 | Effective DEF |
-| Damage UP | 514 | 1521 | After the base kernel |
-| Damage Resistance | 614 | 1528 | After the base kernel |
+| Field family      | Ordinary Dark parameter | Additional Dark+ parameter | Where it applies       |
+| ----------------- | ----------------------: | -------------------------: | ---------------------- |
+| ATK UP            |                     315 |                       1507 | Before DEF subtraction |
+| Resistance        |                     416 |                       1514 | Effective DEF          |
+| Damage UP         |                     514 |                       1521 | After the base kernel  |
+| Damage Resistance |                     614 |                       1528 | After the base kernel  |
 
 The official English labels distinguish **Dark+ Resistance** (`MasterBuff` **2000000130**) from **Dark+ Damage Resistance** (`MasterBuff` **2000000144**). These are separate categories.
 

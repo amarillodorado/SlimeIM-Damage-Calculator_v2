@@ -13,7 +13,8 @@ import { useActiveHit } from './useCalculator';
 /**
  * Every other buff and debuff as a fixed field, sorted into groups. Fields that
  * can't count for this hit are hidden (e.g. Soul of Combos damage on a normal
- * orb); rare types stay behind “All types” unless they have a value.
+ * orb). Matching attribute types are always visible; other rare types stay
+ * behind “All types” unless they have a value.
  */
 export function BuffsCard() {
   const { hit } = useActiveHit();
@@ -22,7 +23,7 @@ export function BuffsCard() {
   const input = toInput(hit, workspace.enemy);
 
   const applicable = EFFECT_TYPES.filter((t) => BUFF_CATEGORIES.includes(t.category) && effectApplies(t.id, input).applies);
-  const shown = (t: EffectType) => showAll || !t.advanced || (hit.effects[t.id] ?? 0) !== 0;
+  const shown = (t: EffectType) => showAll || !t.advanced || Boolean(t.attribute) || (hit.effects[t.id] ?? 0) !== 0;
   const hidden = applicable.filter((t) => !shown(t)).length;
   const entered = applicable.filter((t) => hit.effects[t.id]);
   const summary = entered.length
@@ -71,12 +72,7 @@ export function BuffsCard() {
           </section>
         );
       })}
-      <p className={ui.note}>
-        {hit.attacker.plus && <>Ordinary and “+” attribute effects have separate fields under All types and multiply independently. </>}
-        Stun Strike and Enamor Strike appear while the enemy is stunned or enamored, guard penetration while it guards. Skip rates (pierce, synergy, critical
-        chance), counter power, defensive damage resistance, enamor amount and seal resistance. Your own battle DEF is required in step 2 when Aegis is
-        selected; do not add its defensive buffs again.
-      </p>
+      {hit.attacker.plus && <p className={ui.note}>Ordinary and “+” attribute effects have separate fields and multiply independently.</p>}
     </Card>
   );
 }

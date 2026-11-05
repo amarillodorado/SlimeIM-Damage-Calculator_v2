@@ -1,14 +1,5 @@
 import { blankHit, defaultWorkspace, newId } from '../domain/defaults';
-import {
-  INPUT_KEYS,
-  type Attack,
-  type Attacker,
-  type Enemy,
-  type Hit,
-  type InputConfirmations,
-  type InputKey,
-  type Workspace,
-} from '../domain/types';
+import { INPUT_KEYS, type Attack, type Attacker, type Enemy, type Hit, type InputConfirmations, type InputKey, type Workspace } from '../domain/types';
 
 export type WorkspaceAction =
   | { type: 'updateHit'; id: string; update: (hit: Hit) => Hit }
@@ -16,6 +7,7 @@ export type WorkspaceAction =
   | { type: 'selectHit'; id: string }
   | { type: 'addHit'; mode: 'duplicate' | 'blank' }
   | { type: 'removeHit'; id: string }
+  | { type: 'restoreHit'; hit: Hit; index: number }
   | { type: 'load'; workspace: Workspace }
   | { type: 'clear' }
   | { type: 'confirmInput'; key: InputKey; confirmed: boolean; hitId?: string }
@@ -122,6 +114,12 @@ export function workspaceReducer(state: Workspace, action: WorkspaceAction): Wor
       const hits = state.hits.filter((h) => h.id !== action.id);
       const activeHitId = state.activeHitId === action.id ? hits[Math.max(0, index - 1)]!.id : state.activeHitId;
       return { ...state, hits, activeHitId };
+    }
+    case 'restoreHit': {
+      if (state.hits.length >= MAX_HITS || state.hits.some((hit) => hit.id === action.hit.id)) return state;
+      const hits = [...state.hits];
+      hits.splice(action.index, 0, action.hit);
+      return { ...state, hits, activeHitId: action.hit.id };
     }
     case 'load':
       return action.workspace;

@@ -162,16 +162,21 @@
   gap: var(--space-2) var(--space-4);
 }
 
-.attrRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+.identityGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 600px) {
+  .identityGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .stack {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .effectEntry {
@@ -185,7 +190,9 @@
 .specials {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  /* Required-field outlines extend 7px beyond each row. */
+  gap: var(--space-5);
+  padding: var(--space-2);
 }
 
 .special {
@@ -205,6 +212,34 @@
 .specialControl {
   width: 100%;
   max-width: 360px;
+}
+
+/* Nested source lists are independent stacks, not three-row subgrids. */
+.specialFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  min-width: 0;
+  align-items: start;
+}
+.specialFields > * {
+  min-width: 0;
+  grid-row: auto;
+  grid-template-rows: none;
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+}
+.specialNote {
+  grid-column: 1 / -1;
+}
+.specialFields > * > :first-child {
+  align-self: stretch;
+}
+@media (max-width: 600px) {
+  .specialFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* The resolved attribute factor under the matchup selector: “= 1.5 + 0.1 (Dark+) = ×1.6”. */

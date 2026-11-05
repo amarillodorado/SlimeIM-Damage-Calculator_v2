@@ -256,13 +256,48 @@
 
 .editorRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 110px auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
   align-items: center;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-m);
 }
 
-.editorRow > :nth-child(4) {
-  grid-column: 1 / -1;
+.editorRow > * {
+  min-width: 0;
+  grid-row: auto;
+  grid-template-rows: none;
+  display: flex;
+  flex-direction: column;
+}
+.editorRow > button {
+  justify-self: end;
+  align-self: end;
+}
+.editorRow > * > :first-child {
+  align-self: stretch;
+}
+.progressBox {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--font-size-s);
+}
+.progressBox progress {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+@media (max-width: 520px) {
+  .editorRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .poolItem {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .poolMain {
+    flex-basis: calc(100% - 60px);
+  }
 }
 
 @media (max-width: 420px) {

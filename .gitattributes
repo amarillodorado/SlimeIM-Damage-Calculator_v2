@@ -1,3 +1,4 @@
-# Windows needs CRLF in batch files, shells need LF.
+# Match Prettier's LF setting on every platform; Windows batch files retain CRLF.
+* text=auto eol=lf
 *.bat text eol=crlf
 *.sh text eol=lf

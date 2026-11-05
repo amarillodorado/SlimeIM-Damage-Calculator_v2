@@ -1,3 +1,21 @@
+# Undo message dismissal
+
+- Fixed paused state leaking from a previous Undo message, which could prevent a later message from disappearing. Each message now owns its hover/focus state, and unrelated renders do not restart its 5-second countdown.
+
+# Provider Library and Test pools
+
+- Added searchable portrait selection, batch additions, pagination and icon-only list/grid controls.
+- Library filters combine effect/guaranteed outcome, attribute, attack type and Test pool membership with search, preserving staged selections across view changes.
+- Provider actions now sit at the top right, with navigation above and below the collection. Combination rules sit above ranked results. Removed fixed provider-count and backup-size caps and export-success notices.
+- Separated saved Library definitions from each setup's Test pool and inclusion choices. Pool removal is immediate and silent; Library deletion requires confirmation and removes references from every pool.
+- Bundled presets now seed the Library once and support editing, individual/all-provider export and persistent deletion. Existing saved builds and inclusion choices migrate automatically.
+
+# Built-in example and attribute fields — version 6.6.1
+
+- First visits now load one illustrative 6,900-damage Super Critical setup from application source; existing saved workspaces are preserved. Clear still creates a blank setup, and Load example restores the demonstration on demand with Undo/recovery.
+- Matching ordinary and enhanced attribute fields, including resistance DOWN and damage-resistance DOWN, are visible without opening All types. A Fire+ attacker against Water uses Fire and Fire+ resistance reductions.
+- Updated the Guide, requirements and copy/setup instructions to describe the new startup behavior.
+
 # Setup labels — version 6.5.1
 
 - Renamed numbered calculator entries and their add, duplicate, remove, total, guidance and Teams references to Setup. In-game hit terminology and saved-data fields are unchanged.
@@ -28,6 +46,7 @@ Validation: 160 tests, TypeScript and production build passed. Browser verified 
 - Documented portable backups, formats, limits and storage belonging to the current browser and website address.
 
 Validation: 130 tests, TypeScript and production build passed. Browser verified real JSON import/export, retention of existing providers, signed/scoped effects and restoration after reload.
+
 ## Dynamic combination-rules sentence — 2026-11-03
 
 - The Combination rules summary now updates from the selected provider count and skill-point limit, including singular/plural wording and the unlimited case.

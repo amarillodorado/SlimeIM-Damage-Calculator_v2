@@ -70,7 +70,8 @@ function CheckHit({ result }: { result: HitSummary }) {
           {(check.status === 'low' || check.status === 'high') && (
             <>
               <strong>
-                <Icon name="alert" /> The game did {fmtPct((check.ratio - 1) * 100)} {check.status === 'high' ? 'more' : 'less'}
+                <Icon name="alert" /> The game did {Math.abs(Math.round((check.ratio - 1) * 1000) / 10).toLocaleString('en-US')}%{' '}
+                {check.status === 'high' ? 'more' : 'less'} than predicted
               </strong>
               <span>
                 Calculated {fmtInt(result.damage)} ({fmtInt(check.min)}–{fmtInt(check.max)}), the game showed {fmtInt(hit.observed)}. Possible explanations to
@@ -142,9 +143,13 @@ export function ResultPanel({ result, byHit, total }: Props) {
   };
 
   const share = async () => {
-    const code = await encodeWorkspace(workspace);
-    const ok = await copy(`${location.origin}${location.pathname}#/calculator?s=${code}`);
-    if (ok) flash('Link copied');
+    try {
+      const code = await encodeWorkspace(workspace);
+      const ok = await copy(`${location.origin}${location.pathname}#/calculator?s=${code}`);
+      if (ok) flash('Link copied');
+    } catch (error) {
+      flash(error instanceof Error ? error.message : 'Unable to create a share link. Export a workspace backup instead.');
+    }
   };
 
   return (

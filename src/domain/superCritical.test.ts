@@ -25,9 +25,7 @@ describe('Super Critical with recovered official coefficients', () => {
     const result = calculateHit(input);
     expect(getSuperCriticalFactor(input).toNumber()).toBe(2.15);
     expect(result.damage).toBe(6450);
-    expect(result.steps.filter((step) => step.id === 'crit')).toEqual([
-      expect.objectContaining({ label: 'Super Critical', factor: 2.15, value: 6450 }),
-    ]);
+    expect(result.steps.filter((step) => step.id === 'crit')).toEqual([expect.objectContaining({ label: 'Super Critical', factor: 2.15, value: 6450 })]);
     expect(result.steps.find((step) => step.id === 'crit')!.detail).not.toContain('null');
   });
 
@@ -76,8 +74,20 @@ describe('Super Critical with recovered official coefficients', () => {
   // Explicit coefficients here are synthetic Decimal oracles, not user overrides.
   // Expected strings were captured from System.Decimal using the native BP order.
   it.each([
-    { base: 1.2345678901234567, scale: 1.2345678901234567, power: [12345.678901234567, -2345.678901234567], resistance: [12345.678901234567, -345.678901234567], expected: '279.15256493020880775319351135' },
-    { base: 0.1234567890123456, scale: 9.87654321098765, power: [99999.99999999999, -12345.678901234567], resistance: [33333.33333333333, -123.45678901234567], expected: '13044.156381203408568694238535' },
+    {
+      base: 1.2345678901234567,
+      scale: 1.2345678901234567,
+      power: [12345.678901234567, -2345.678901234567],
+      resistance: [12345.678901234567, -345.678901234567],
+      expected: '279.15256493020880775319351135',
+    },
+    {
+      base: 0.1234567890123456,
+      scale: 9.87654321098765,
+      power: [99999.99999999999, -12345.678901234567],
+      resistance: [33333.33333333333, -123.45678901234567],
+      expected: '13044.156381203408568694238535',
+    },
   ])('matches the low-level .NET Decimal oracle: $expected', ({ base, scale, power, resistance, expected }) => {
     expect(superCriticalRate(base, scale, power, resistance).toString()).toBe(expected);
   });

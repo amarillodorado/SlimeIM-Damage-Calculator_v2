@@ -36,19 +36,21 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('clean calculator workspace', () => {
-  it('starts with one blank hit and no example-loading action', () => {
+describe('calculator startup and saved workspaces', () => {
+  it('starts with one complete built-in example on a first visit', () => {
     // The old default workspace must not silently load after this update.
     const old = ordinaryInput();
     old.hits[0]!.attacker.name = 'Old seeded example';
     localStorage.setItem('slimeim.v6.workspace', JSON.stringify(old));
     renderCalculator();
     expect(screen.getAllByRole('tab')).toHaveLength(1);
-    expect(screen.getAllByLabelText('Name (optional)')[0]!).toHaveValue('');
-    expect(screen.getByLabelText('Battle ATK')).toHaveValue(0);
-    expect(heroValue()).toBe('—');
-    expect(screen.getAllByText(/required inputs? remaining/i).length).toBeGreaterThan(0);
-    expect(screen.queryByRole('button', { name: /Verified example/i })).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText('Name (optional)')[0]!).toHaveValue('Example - Super Critical');
+    expect(screen.getByLabelText('Battle ATK')).toHaveValue(10000);
+    expect(heroValue()).toBe('6,900');
+    expect(screen.getByText('All required inputs confirmed for this setup')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Load example' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Critical power UP source 1')).toHaveValue(100);
+    expect(screen.getByLabelText('Critical power UP source 2')).toHaveValue(-50);
     expect(screen.queryByText('Exact match')).not.toBeInTheDocument();
     expect(localStorage.getItem('slimeim.v6.workspace')).not.toBeNull();
   });
@@ -59,6 +61,89 @@ describe('clean calculator workspace', () => {
     expect(screen.getAllByLabelText('Name (optional)')[0]!).toHaveValue('Own recorded hit');
     expect(screen.getByLabelText('Battle ATK')).toHaveValue(10000);
     expect(heroValue()).toBe('3,000');
+  });
+
+  it('selects attacker and enemy attributes independently and preserves the + choice across attribute changes', async () => {
+    const user = userEvent.setup();
+    renderCalculator(ordinaryInput());
+    const attacker = within(screen.getByRole('radiogroup', { name: 'Attribute' }));
+    const enemy = within(screen.getByRole('radiogroup', { name: 'Enemy attribute' }));
+    await user.click(screen.getByRole('switch', { name: '+ attribute' }));
+    expect(attacker.getByRole('radio', { name: 'Fire+' })).toBeChecked();
+    await user.click(attacker.getByRole('radio', { name: 'Dark+' }));
+    await user.click(enemy.getByRole('radio', { name: 'Water' }));
+    expect(attacker.getByRole('radio', { name: 'Dark+' })).toBeChecked();
+    expect(enemy.getByRole('radio', { name: 'Water' })).toBeChecked();
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.workspace)!);
+    expect(saved.hits[0].attacker).toMatchObject({ attribute: 'dark', plus: true });
+    expect(saved.enemy.attribute).toBe('water');
+    await user.click(screen.getByRole('switch', { name: '+ attribute' }));
+    expect(attacker.getByRole('radio', { name: 'Dark' })).toBeChecked();
+  });
+
+  it('confirms the current attribute and supports native arrow-key selection', async () => {
+    const user = userEvent.setup();
+    renderCalculator(defaultWorkspace());
+    const attacker = screen.getByRole('radiogroup', { name: 'Attribute' });
+    expect(attacker).toHaveAttribute('aria-invalid', 'true');
+    await user.click(within(attacker).getByRole('radio', { name: 'Fire' }));
+    expect(attacker).not.toHaveAttribute('aria-invalid');
+    await user.keyboard('{ArrowRight}');
+    const water = within(attacker).getByRole('radio', { name: 'Water' });
+    expect(water).toBeChecked();
+    expect(water).toHaveFocus();
+    expect(within(screen.getByRole('radiogroup', { name: 'Enemy attribute' })).getByRole('radio', { name: 'Wind' })).toBeChecked();
+  });
+
+  it('loads the built-in example on demand and can recover the previous workspace', async () => {
+    const user = userEvent.setup();
+    renderCalculator(ordinaryInput());
+    await user.click(screen.getByRole('button', { name: 'Load example' }));
+    expect(heroValue()).toBe('6,900');
+    expect(screen.getByLabelText('Battle ATK')).toHaveValue(10000);
+    await user.click(screen.getByRole('button', { name: 'Restore previous workspace' }));
+    expect(heroValue()).toBe('3,000');
+    expect(screen.getAllByLabelText('Name (optional)')[0]!).toHaveValue('Own recorded hit');
+  });
+
+  it('keeps a cleared workspace blank after reopening rather than seeding again', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const view = renderCalculator();
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    view.unmount();
+    renderCalculator();
+    expect(screen.getAllByRole('tab')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Name (optional)')[0]!).toHaveValue('');
+    expect(heroValue()).toBe('—');
+  });
+
+  it('shows matching Fire and Fire+ resistance fields without All types against Water', async () => {
+    const ws = ordinaryInput();
+    ws.hits[0]!.attacker.plus = true;
+    ws.enemy.attribute = 'water';
+    const user = userEvent.setup();
+    renderCalculator(ws);
+    expect(screen.getByLabelText('Fire resistance DOWN')).toBeVisible();
+    expect(screen.getByLabelText('Fire+ resistance DOWN')).toBeVisible();
+    expect(screen.getByLabelText('Fire damage res. DOWN')).toBeVisible();
+    expect(screen.getByLabelText('Fire+ damage resistance DOWN')).toBeVisible();
+    expect(screen.getByLabelText('Fire+ ATK UP')).toBeVisible();
+    expect(screen.getByLabelText('Fire+ damage UP')).toBeVisible();
+    expect(screen.queryByLabelText('Water resistance DOWN')).not.toBeInTheDocument();
+    const before = heroValue();
+    await user.type(screen.getByLabelText('Fire+ resistance DOWN'), '20');
+    expect(heroValue()).not.toBe(before);
+  });
+
+  it('keeps ordinary attribute resistance visible while excluding inapplicable enhanced effects', () => {
+    const ws = ordinaryInput();
+    ws.enemy.attribute = 'water';
+    renderCalculator(ws);
+    expect(screen.getByLabelText('Fire resistance DOWN')).toBeVisible();
+    expect(screen.getByLabelText('Fire damage res. DOWN')).toBeVisible();
+    expect(screen.queryByLabelText('Fire+ resistance DOWN')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Fire+ damage resistance DOWN')).not.toBeInTheDocument();
   });
 
   it('reports compatible candidate rolls without claiming to recover the actual draw', async () => {

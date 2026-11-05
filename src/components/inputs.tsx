@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import ui from './ui.module.css';
+import { useFieldAccessibility } from './fieldAccessibility';
 
 const parse = (text: string): number | null => {
   const t = text.trim().replace(',', '.');
@@ -28,6 +29,7 @@ interface NumberInputProps {
 }
 
 export function NumberInput({ id, value, onChange, suffix, min, max, allowNegative, decimal, ariaLabel, placeholder, onConfirm, onEmpty }: NumberInputProps) {
+  const accessibility = useFieldAccessibility();
   const [draft, setDraft] = useState(value === null ? '' : String(value));
   // Follow outside changes (reset, loaded links) without fighting the user's typing.
   useEffect(() => {
@@ -49,6 +51,7 @@ export function NumberInput({ id, value, onChange, suffix, min, max, allowNegati
         value={draft}
         placeholder={placeholder}
         aria-label={ariaLabel}
+        {...accessibility}
         onChange={(e) => {
           setDraft(e.target.value);
           const n = parse(e.target.value);
@@ -123,8 +126,9 @@ export function Segmented<T extends string | number>({
   ariaLabel: string;
 }) {
   const name = useId();
+  const accessibility = useFieldAccessibility();
   return (
-    <div className={ui.seg} role="radiogroup" aria-label={ariaLabel}>
+    <div className={ui.seg} role="radiogroup" aria-label={ariaLabel} {...accessibility}>
       {options.map((o) => (
         <label key={String(o.value)} className={`${ui.segOption} ${o.value === value ? ui.segOn : ''} ${o.disabled ? ui.segDisabled : ''}`} title={o.title}>
           <input type="radio" name={name} checked={o.value === value} disabled={o.disabled} onClick={() => onChange(o.value)} onChange={() => {}} />
@@ -147,16 +151,25 @@ export function Switch({
   checked,
   onChange,
   hideLabel,
+  disabled,
 }: {
   label: string;
   description?: ReactNode;
   checked: boolean;
   onChange: (v: boolean) => void;
   hideLabel?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <label className={ui.switch}>
-      <input type="checkbox" role="switch" checked={checked} aria-label={hideLabel ? label : undefined} onChange={(e) => onChange(e.target.checked)} />
+      <input
+        type="checkbox"
+        role="switch"
+        disabled={disabled}
+        checked={checked}
+        aria-label={hideLabel ? label : undefined}
+        onChange={(e) => onChange(e.target.checked)}
+      />
       <span className={ui.track} aria-hidden="true" />
       {!hideLabel && (
         <span className={ui.switchText}>
@@ -186,12 +199,14 @@ export function Select<T extends string>({
   onChange: (v: T) => void;
   ariaLabel?: string;
 }) {
+  const accessibility = useFieldAccessibility();
   return (
     <select
       id={id}
       className={ui.select}
       value={value}
       aria-label={ariaLabel}
+      {...accessibility}
       onClick={(e) => onChange(e.currentTarget.value as T)}
       onChange={(e) => onChange(e.target.value as T)}
     >

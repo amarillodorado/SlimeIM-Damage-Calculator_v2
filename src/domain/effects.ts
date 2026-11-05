@@ -184,7 +184,8 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Combo damage UP',
     examples: ['Combo damage UP'],
     where: 'Skills, traits',
-    effect: 'Adds to an eligible ordinary-soul finisher factor above 100%. It does not affect a 1–3-soul chain or a non-finisher. Enter it separately from the base 110%/150%/200% finisher factor.',
+    effect:
+      'Adds to an eligible ordinary-soul finisher factor above 100%. It does not affect a 1–3-soul chain or a non-finisher. Enter it separately from the base 110%/150%/200% finisher factor.',
     confidence: 'client',
   },
   {
@@ -220,7 +221,8 @@ export const EFFECT_TYPES: EffectType[] = [
       'Synergy Power 20% (detailed stats)',
     ],
     where: 'Battle effect list, equipment, EX abilities, detailed stats',
-    effect: 'Only when Synergy triggers: × (1 + synergy power). +40% → ×1.4.',
+    effect:
+      'Ordinary Synergy adds 40% of support ATK, then later multiplies by (1 + power / 100 + resistance DOWN / 100). Super Synergy adds 55% of support ATK and scales positive power/resistance contributions by 1.2; negative ones stay unchanged.',
     confidence: 'verified',
   },
   {
@@ -229,7 +231,8 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Pierce power UP',
     examples: ['Pierce power +12% (equipment)', 'Increases own pierce power by 15% (Soul Combo trait)', 'Pierce Power 12% (detailed stats)'],
     where: 'Equipment, traits, detailed stats',
-    effect: 'Only when Pierce triggers: (damage + 6% ATK) × (1 + pierce power).',
+    effect:
+      'Ordinary Pierce adds 6% of Battle ATK at its damage stage, then applies its power/resistance multiplier. Super Pierce adds 100% of Battle ATK and scales positive power/resistance contributions by 1.2; negative ones stay unchanged.',
     confidence: 'verified',
   },
   {
@@ -244,7 +247,7 @@ export const EFFECT_TYPES: EffectType[] = [
     ],
     where: 'Battle effect list, equipment, EX abilities, detailed stats (“Critical Damage”)',
     effect:
-      'Only on ordinary Critical hits: × (1.3 + power / 100 + enemy resistance DOWN / 100). Add distinct applicable sources; do not count the same equipment or detailed-stat value twice.',
+      'Ordinary Critical: × (1.3 + power / 100 + enemy resistance DOWN / 100). Super Critical replaces this with a 1.5 base and scales positive power/resistance contributions by 1.3; negative ones stay unchanged. Add distinct sources only; equipment may already be included in detailed stats.',
     confidence: 'client',
   },
   {
@@ -253,7 +256,8 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Enemy critical resistance DOWN',
     examples: ['Critical Resistance DOWN'],
     where: 'Enemy effect list',
-    effect: 'Added to critical power. Negative if the enemy has critical resistance UP.',
+    effect:
+      'Added to Critical power. Resistance DOWN is positive; resistance UP is negative. Super Critical scales positive contributions by 1.3, leaving negative contributions unchanged.',
     confidence: 'client',
   },
   {
@@ -262,7 +266,7 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Enemy pierce resistance DOWN',
     examples: ['Pierce Resistance DOWN'],
     where: 'Enemy effect list',
-    effect: 'Added to pierce power. Negative if the enemy has pierce resistance UP.',
+    effect: 'Added to Pierce power. Resistance UP is negative. Super Pierce scales positive contributions by 1.2; negative contributions stay unchanged.',
     confidence: 'client',
   },
   {
@@ -271,7 +275,7 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Enemy synergy resistance DOWN',
     examples: ['Synergy Resistance DOWN'],
     where: 'Enemy effect list',
-    effect: 'Added to synergy power. Negative if the enemy has synergy resistance UP.',
+    effect: 'Added to Synergy power. Resistance UP is negative. Super Synergy scales positive contributions by 1.2; negative contributions stay unchanged.',
     confidence: 'client',
   },
   {
@@ -280,7 +284,8 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Aegis power UP',
     examples: ['Aegis Power 10% (detailed stats)'],
     where: 'Detailed stats, skills',
-    effect: 'Only when Aegis (DEF critical) triggers: × (1 + aegis power).',
+    effect:
+      'Ordinary Aegis adds 40% of own battle DEF, then later applies its power/resistance multiplier. Super Aegis adds 55% of DEF and scales positive power/resistance contributions by 1.2; negative ones stay unchanged.',
     confidence: 'client',
   },
   {
@@ -289,7 +294,7 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Enemy aegis resistance DOWN',
     examples: ['Aegis Resistance DOWN'],
     where: 'Enemy effect list',
-    effect: 'Added to aegis power.',
+    effect: 'Added to Aegis power. Resistance UP is negative. Super Aegis scales positive contributions by 1.2; negative contributions stay unchanged.',
     confidence: 'client',
   },
 
@@ -388,7 +393,8 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Enemy + attribute resistance DOWN',
     examples: ['Dark+ Resistance DOWN'],
     where: 'Your skills; enemy effect list',
-    effect: 'Only for the matching “+” attack attribute. Lowers the effective DEF term, separately from ordinary attribute resistance DOWN; do not add the two percentages together.',
+    effect:
+      'Only for the matching “+” attack attribute. Lowers the effective DEF term, separately from ordinary attribute resistance DOWN; do not add the two percentages together.',
     attribute: 'attacker',
     confidence: 'client',
     advanced: true,
@@ -430,7 +436,8 @@ export const EFFECT_TYPES: EffectType[] = [
     label: 'Enemy + attribute damage resistance DOWN',
     examples: ['Dark+ Damage Resistance DOWN'],
     where: 'Your skills; enemy effect list',
-    effect: 'Only for the matching “+” attack attribute. Applied after DEF as a separate multiplier from ordinary attribute damage resistance DOWN. An “all enhanced attributes” effect includes this attribute once; “all targets” describes the enemies affected and does not make it an AoE-only bonus.',
+    effect:
+      'Only for the matching “+” attack attribute. Applied after DEF as a separate multiplier from ordinary attribute damage resistance DOWN. An “all enhanced attributes” effect includes this attribute once; “all targets” describes the enemies affected and does not make it an AoE-only bonus.',
     attribute: 'attacker',
     confidence: 'client',
     advanced: true,

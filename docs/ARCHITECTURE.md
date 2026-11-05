@@ -9,6 +9,7 @@ The application is a static React + TypeScript + Vite site. Domain modules calcu
 - `src/domain/check.ts`: all 200 allowed variance rolls and compatible candidate results.
 - `src/domain/advisor.ts`: comparisons across supported applicable percentage effects.
 - `src/domain/teams.ts`: conditional buff-combination enumeration and ranking.
+- `src/domain/providerLibrary.ts`: Library definitions, per-setup Test pools, one-time preset/legacy migration and reference cleanup on confirmed deletion.
 - `src/domain/defaults.ts`: blank constructors and one-hit clean startup. No historical battle presets.
 - `src/domain/normalize.ts`: validation of saved and shared inputs.
 - `src/test/fixtures.ts`: historical numerical fixtures, imported only by tests.
@@ -24,6 +25,8 @@ UI formatting may convert values for display, but display rounding must not feed
 ## State and compatibility
 
 The current workspace storage key is `slimeim.v6.1.workspace`. It starts the updated application clean without deleting older browser data. New fields are normalized from missing values with safe defaults. Shared setups must retain separate effect entries so a round trip cannot alter Super rates or stat rounding.
+
+`slimeim.v6.providerLibrary` atomically stores provider definitions, Test pool membership/inclusion by setup ID, and list/grid preferences. The older `slimeim.v6.units` list is read only when creating this state, preserving all edits and disabled providers while seeding missing bundled presets. Libraries and Test pools are not truncated to a fixed provider count. An existing empty Library stays empty. Provider JSON backups contain definitions only; legacy `enabled` fields are accepted but inclusion is controlled by the target Test pool.
 
 ## Copy and confidence
 

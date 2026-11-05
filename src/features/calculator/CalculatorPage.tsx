@@ -9,21 +9,31 @@ import { HitTabs } from './HitTabs';
 import { ResultPanel } from './ResultPanel';
 import { useResults } from './useCalculator';
 import { RequiredInputs } from './RequiredInputs';
+import { WorkspaceTools } from './WorkspaceTools';
 
 export function CalculatorPage() {
-  const { activeHit } = useWorkspace();
+  const { activeHit, workspace } = useWorkspace();
   const { byHit, total, error } = useResults();
   const result = byHit.get(activeHit.id)!;
 
   return (
     <div className={css.page}>
       <div className={css.inputs}>
+        <WorkspaceTools />
         <RequiredInputs />
         <HitTabs results={byHit} />
-        <AttackerCard result={result} />
-        <AttackCard />
-        <EnemyCard />
-        <BuffsCard />
+        <div
+          className={css.inputs}
+          role="tabpanel"
+          id="setup-panel"
+          aria-labelledby={`setup-tab-${workspace.hits.findIndex((hit) => hit.id === activeHit.id)}`}
+          tabIndex={0}
+        >
+          <AttackerCard result={result} />
+          <AttackCard />
+          <EnemyCard />
+          <BuffsCard />
+        </div>
       </div>
       {error ? (
         <section className={ui.card} role="alert">

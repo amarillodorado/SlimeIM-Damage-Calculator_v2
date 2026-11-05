@@ -1,0 +1,77 @@
+{
+  "format": "slimeim-workspace",
+  "version": 1,
+  "workspace": {
+    "version": 6,
+    "highlightRequired": true,
+    "activeHitId": "example-super-critical",
+    "enemy": {
+      "name": "Example enemy",
+      "attribute": "fire",
+      "def": 5000,
+      "physRes": 0,
+      "magicRes": 0,
+      "stunned": false,
+      "enamored": false,
+      "guard": "none",
+      "confirmed": {
+        "enemy.attribute": true,
+        "enemy.def": true,
+        "enemy.physRes": true,
+        "enemy.guard": true
+      }
+    },
+    "hits": [
+      {
+        "id": "example-super-critical",
+        "attacker": {
+          "name": "Example - Super Critical",
+          "attribute": "fire",
+          "plus": false,
+          "attackType": "physical",
+          "atkMode": "battle",
+          "battleAtk": 10000,
+          "troopAtk": 0,
+          "supportAtk": 0,
+          "ownDef": 0,
+          "comboBuddyAtk1": 0,
+          "comboBuddyAtk2": 0,
+          "tau": { "active": false, "weak": 1, "superWeak": 1 }
+        },
+        "attack": {
+          "kind": "soul",
+          "power": 100,
+          "normalPowerOverride": false,
+          "variant": "normal",
+          "ultimateBonus": 40,
+          "target": "single",
+          "comboMultiplier": 1,
+          "matchup": "auto",
+          "popup": "none",
+          "crit": true,
+          "superCrit": true,
+          "pierce": "off",
+          "synergy": "off",
+          "aegis": "off"
+        },
+        "effects": { "critDmg": 50 },
+        "effectEntries": { "critDmg": [100, -50], "critResDown": [0] },
+        "observed": 0,
+        "confirmed": {
+          "attacker.attribute": true,
+          "attacker.attackType": true,
+          "attacker.atkMode": true,
+          "attacker.battleAtk": true,
+          "attack.kind": true,
+          "attack.target": true,
+          "attack.comboMultiplier": true,
+          "attack.popup": true,
+          "attack.crit": true,
+          "attack.pierce": true,
+          "attack.synergy": true,
+          "attack.aegis": true
+        }
+      }
+    ]
+  }
+}

@@ -1,14 +1,14 @@
-import { useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { ATTRIBUTE_LABEL } from '../../domain/attributes';
-import { newId } from '../../domain/defaults';
 import { EFFECT_BY_ID, EFFECT_TYPES } from '../../domain/effects';
 import { calculateHit, toInput } from '../../domain/engine';
 import { comparisonRequirements } from '../../domain/comparisonRequirements';
 import { getMissingRequirements } from '../../domain/requirements';
-import { normalizeUnits } from '../../domain/normalize';
-import { exportProviderFile, mergeProviders, parseProviderFile } from '../../domain/providerFiles';
-import { MAX_PROVIDERS, MAX_PROVIDER_COST, MAX_PROVIDER_EFFECTS, MAX_PROVIDER_EFFECT_VALUE, MAX_PROVIDER_FILE_BYTES, MAX_PROVIDER_NAME } from '../../domain/providerLimits';
-import { countCombinations, MAX_COMBINATIONS, rankTeams, type SupportUnit, type UnitEffect, type UnitTriggers } from '../../domain/teams';
+import { createProviderLibrary, libraryProvider, normalizeProviderLibrary, poolProviders } from '../../domain/providerLibrary';
+import { MAX_PROVIDER_COST, MAX_PROVIDER_EFFECTS, MAX_PROVIDER_EFFECT_VALUE, MAX_PROVIDER_NAME } from '../../domain/providerLimits';
+import { countCombinations, MAX_COMBINATIONS, type SupportUnit, type UnitEffect, type UnitTriggers } from '../../domain/teams';
+import { MAX_RANKED_TEAMS } from '../../domain/teamSearch';
+import { useTeamSearch } from './useTeamSearch';
 import { ATTRIBUTES, type AttributeFilter, type EffectTypeId } from '../../domain/types';
 import { hrefFor } from '../../app/router';
 import { Field } from '../../components/Field';
@@ -16,11 +16,13 @@ import { Icon } from '../../components/Icon';
 import { NumberInput, Segmented, Select, Switch, TextInput } from '../../components/inputs';
 import { Card, Dialog } from '../../components/layout';
 import ui from '../../components/ui.module.css';
-import { STORAGE_KEYS, usePersistentState } from '../../state/storage';
+import { loadJSON, STORAGE_KEYS, usePersistentState } from '../../state/storage';
 import { useWorkspace } from '../../state/workspaceContext';
 import { attackLabel, fmtInt, fmtPct, hitLabel } from '../calculator/format';
 import { useActiveHit } from '../calculator/useCalculator';
 import { PRESET_UNITS } from './presets';
+import { Avatar } from './ProviderDisplay';
+import { ProviderManager } from './ProviderManager';
 import css from './teams.module.css';
 
 interface TeamSettings {
@@ -29,7 +31,6 @@ interface TeamSettings {
 }
 
 const PAGE = 15;
-const HUES = [200, 260, 330, 20, 140, 45, 290, 170];
 const TRIGGER_LABEL: Record<keyof UnitTriggers, string> = { crit: 'Critical', pierce: 'Pierce', synergy: 'Synergy', aegis: 'Aegis' };
 const TYPE_OPTIONS = EFFECT_TYPES.filter((t) => t.category !== 'noEffect' && t.category !== 'stat').map((t) => ({ value: t.id, label: t.label }));
 const ATTRIBUTE_FILTER_OPTIONS = [
@@ -57,48 +58,6 @@ function calculationInputError(error: unknown): string | null {
   if (/overflow|out of range|too long/.test(message)) return 'The entered stats or effect values are too large. Reduce them and try again.';
   if (/Division by zero/.test(message)) return 'An entered effect creates a zero divisor. Check the base setup and effect values.';
   return 'Check that every stat and effect contains a valid finite number.';
-}
-
-function Avatar({ unit, size = 36 }: { unit: SupportUnit; size?: number }) {
-  if (unit.icon) return <img className={css.avatar} src={`${import.meta.env.BASE_URL}${unit.icon}`} alt="" width={size} height={size} loading="lazy" />;
-  const hue = HUES[[...unit.name].reduce((s, c) => s + c.charCodeAt(0), 0) % HUES.length];
-  const initials = unit.name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('');
-  return (
-    <span className={`${css.avatar} ${css.avatarText}`} style={{ width: size, height: size, background: `hsl(${hue} 65% 45%)` }} aria-hidden="true">
-      {initials || '?'}
-    </span>
-  );
-}
-
-function UnitChips({ unit }: { unit: SupportUnit }) {
-  return (
-    <div className={css.chips}>
-      {unit.effects.map((effect, index) => {
-        const { type, attribute, value } = effect;
-        return (
-          <span key={index} className={`${css.chip} ${value < 0 ? css.neg : ''}`}>
-            {EFFECT_BY_ID[type].label}
-            {effect.attackType && effect.attackType !== 'any' ? ` (${effect.attackType})` : ''}
-            {effect.target && effect.target !== 'any' ? ` (${effect.target === 'single' ? 'single-target' : 'all-target'})` : ''}
-            {attribute !== 'any' ? ` (${ATTRIBUTE_LABEL[attribute]})` : ''} {value > 0 ? '+' : ''}
-            {value}%
-          </span>
-        );
-      })}
-      {(Object.keys(TRIGGER_LABEL) as (keyof UnitTriggers)[])
-        .filter((t) => unit.triggers[t])
-        .map((t) => (
-          <span key={t} className={`${css.chip} ${css.trigger}`}>
-            {TRIGGER_LABEL[t]}
-          </span>
-        ))}
-    </div>
-  );
 }
 
 function UnitEditor({ unit, onSave, onClose }: { unit: SupportUnit | null; onSave: (u: SupportUnit) => void; onClose: () => void }) {
@@ -135,8 +94,14 @@ function UnitEditor({ unit, onSave, onClose }: { unit: SupportUnit | null; onSav
       {draft && (
         <div className={css.column}>
           <div className={ui.grid}>
-            <Field label="Name">{(id) => <TextInput id={id} value={draft.name} maxLength={MAX_PROVIDER_NAME} placeholder="e.g. Shion (Summer)" onChange={(name) => set({ name })} />}</Field>
-            <Field label="Skill cost" note="Total SP cost of the skills represented by this provider’s effects.">{(id) => <NumberInput id={id} value={draft.skillCost} max={MAX_PROVIDER_COST} suffix="SP" onChange={(skillCost) => set({ skillCost })} />}</Field>
+            <Field label="Name">
+              {(id) => (
+                <TextInput id={id} value={draft.name} maxLength={MAX_PROVIDER_NAME} placeholder="e.g. Shion (Summer)" onChange={(name) => set({ name })} />
+              )}
+            </Field>
+            <Field label="Skill cost" note="Total SP cost of the skills represented by this provider’s effects.">
+              {(id) => <NumberInput id={id} value={draft.skillCost} max={MAX_PROVIDER_COST} suffix="SP" onChange={(skillCost) => set({ skillCost })} />}
+            </Field>
           </div>
           <h3 className={ui.groupTitle}>Effects to use together</h3>
           <p className={ui.note}>
@@ -150,40 +115,84 @@ function UnitEditor({ unit, onSave, onClose }: { unit: SupportUnit | null; onSav
           <ul className={css.editorList}>
             {draft.effects.map((e, i) => (
               <li key={i} className={css.editorRow}>
-                <Select<EffectTypeId> ariaLabel="Effect type" value={e.type} options={TYPE_OPTIONS} onChange={(type) => setEffect(i, { type })} />
-                <NumberInput ariaLabel="Value" value={e.value} decimal min={-MAX_PROVIDER_EFFECT_VALUE} max={MAX_PROVIDER_EFFECT_VALUE} allowNegative suffix="%" onChange={(value) => setEffect(i, { value })} />
+                <Field label="Effect" wide>
+                  {(id) => (
+                    <Select<EffectTypeId>
+                      id={id}
+                      ariaLabel={`Effect type ${i + 1}`}
+                      value={e.type}
+                      options={TYPE_OPTIONS}
+                      onChange={(type) => setEffect(i, { type })}
+                    />
+                  )}
+                </Field>
+                <Field label="Value">
+                  {(id) => (
+                    <NumberInput
+                      id={id}
+                      ariaLabel={`Effect value ${i + 1}`}
+                      value={e.value}
+                      decimal
+                      min={-MAX_PROVIDER_EFFECT_VALUE}
+                      max={MAX_PROVIDER_EFFECT_VALUE}
+                      allowNegative
+                      suffix="%"
+                      onChange={(value) => setEffect(i, { value })}
+                    />
+                  )}
+                </Field>
                 <button
                   type="button"
                   className={ui.iconButton}
-                  aria-label="Remove effect"
+                  aria-label={`Remove effect ${i + 1}`}
                   onClick={() => set({ effects: draft.effects.filter((_, j) => j !== i) })}
                 >
                   <Icon name="trash" />
                 </button>
                 {EFFECT_BY_ID[e.type].attribute && (
-                  <Select<AttributeFilter>
-                    ariaLabel="Attribute"
-                    value={e.attribute}
-                    options={ATTRIBUTE_FILTER_OPTIONS}
-                    onChange={(attribute) => setEffect(i, { attribute })}
-                  />
+                  <Field label="Attribute">
+                    {(id) => (
+                      <Select<AttributeFilter>
+                        id={id}
+                        ariaLabel={`Attribute restriction ${i + 1}`}
+                        value={e.attribute}
+                        options={ATTRIBUTE_FILTER_OPTIONS}
+                        onChange={(attribute) => setEffect(i, { attribute })}
+                      />
+                    )}
+                  </Field>
                 )}
-                <Select<NonNullable<UnitEffect['attackType']>>
-                  ariaLabel={`Attack type restriction ${i + 1}`}
-                  value={e.attackType ?? 'any'}
-                  options={ATTACK_SCOPE_OPTIONS}
-                  onChange={(attackType) => setEffect(i, { attackType })}
-                />
-                <Select<NonNullable<UnitEffect['target']>>
-                  ariaLabel={`Target restriction ${i + 1}`}
-                  value={e.target ?? 'any'}
-                  options={TARGET_SCOPE_OPTIONS}
-                  onChange={(target) => setEffect(i, { target })}
-                />
+                <Field label="Attack type">
+                  {(id) => (
+                    <Select<NonNullable<UnitEffect['attackType']>>
+                      id={id}
+                      ariaLabel={`Attack type restriction ${i + 1}`}
+                      value={e.attackType ?? 'any'}
+                      options={ATTACK_SCOPE_OPTIONS}
+                      onChange={(attackType) => setEffect(i, { attackType })}
+                    />
+                  )}
+                </Field>
+                <Field label="Target type">
+                  {(id) => (
+                    <Select<NonNullable<UnitEffect['target']>>
+                      id={id}
+                      ariaLabel={`Target restriction ${i + 1}`}
+                      value={e.target ?? 'any'}
+                      options={TARGET_SCOPE_OPTIONS}
+                      onChange={(target) => setEffect(i, { target })}
+                    />
+                  )}
+                </Field>
               </li>
             ))}
           </ul>
-          <button type="button" className={ui.button} disabled={draft.effects.length >= MAX_PROVIDER_EFFECTS} onClick={() => set({ effects: [...draft.effects, { type: 'soulDmg', value: 0, attribute: 'any' }] })}>
+          <button
+            type="button"
+            className={ui.button}
+            disabled={draft.effects.length >= MAX_PROVIDER_EFFECTS}
+            onClick={() => set({ effects: [...draft.effects, { type: 'soulDmg', value: 0, attribute: 'any' }] })}
+          >
             <Icon name="plus" /> Add effect
           </button>
           {draft.effects.length >= MAX_PROVIDER_EFFECTS && <p className={ui.note}>A provider can contain up to {MAX_PROVIDER_EFFECTS} effects.</p>}
@@ -203,7 +212,18 @@ function UnitEditor({ unit, onSave, onClose }: { unit: SupportUnit | null; onSav
 export default function TeamsPage() {
   const { workspace, activeHit } = useWorkspace();
   const { setAttacker, confirmInput } = useActiveHit();
-  const [pool, setPool, providerSaveState] = usePersistentState<SupportUnit[]>(STORAGE_KEYS.units, () => [], normalizeUnits, { immediate: true });
+  const [library, setLibrary, providerSaveState] = usePersistentState(
+    STORAGE_KEYS.providerLibrary,
+    () =>
+      createProviderLibrary(
+        PRESET_UNITS,
+        loadJSON(STORAGE_KEYS.units),
+        workspace.hits.map((hit) => hit.id),
+      ),
+    normalizeProviderLibrary,
+    { immediate: true },
+  );
+  const candidates = useMemo(() => poolProviders(library, activeHit.id, true), [library, activeHit.id]);
   const [settings, setSettings] = usePersistentState<TeamSettings>(
     STORAGE_KEYS.teamSettings,
     () => ({ size: 3, maxCost: 0 }),
@@ -214,65 +234,11 @@ export default function TeamsPage() {
   );
   const [editing, setEditing] = useState<SupportUnit | null>(null);
   const [shown, setShown] = useState(PAGE);
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const [fileMessage, setFileMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
-
-  const importProviders = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.currentTarget.files?.[0];
-    event.currentTarget.value = '';
-    if (!file) return;
-    setFileMessage(null);
-    if (file.size > MAX_PROVIDER_FILE_BYTES) {
-      setFileMessage({ kind: 'error', text: 'Choose a provider JSON file no larger than 1 MB.' });
-      return;
-    }
-    setIsImporting(true);
-    try {
-      const incoming = parseProviderFile(await file.text());
-      const imported = mergeProviders(pool, incoming);
-      if (imported.added || imported.updated) setPool(imported.providers);
-      setFileMessage({
-        kind: 'success',
-        text: `Import complete: ${imported.added} added, ${imported.updated} updated, ${imported.unchanged} unchanged.`,
-      });
-    } catch (error) {
-      setFileMessage({ kind: 'error', text: error instanceof Error ? error.message : 'Could not read this provider file. Try another JSON file.' });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const exportProviders = () => {
-    let url: string | undefined;
-    try {
-      const json = exportProviderFile(pool);
-      url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-      const download = document.createElement('a');
-      download.href = url;
-      download.download = 'slimeim-buff-providers.json';
-      document.body.append(download);
-      try {
-        download.click();
-      } finally {
-        download.remove();
-      }
-      setFileMessage({ kind: 'success', text: `Exported ${pool.length} buff provider${pool.length === 1 ? '' : 's'}.` });
-    } catch (error) {
-      setFileMessage({ kind: 'error', text: error instanceof Error ? error.message : 'Could not export providers. Please try again.' });
-    } finally {
-      if (url) {
-        const exportedUrl = url;
-        window.setTimeout(() => URL.revokeObjectURL(exportedUrl), 1000);
-      }
-    }
-  };
-
   const base = useMemo(() => toInput(activeHit, workspace.enemy), [activeHit, workspace.enemy]);
   const baseMissing = useMemo(() => getMissingRequirements(activeHit, workspace.enemy), [activeHit, workspace.enemy]);
   const requirements = useMemo(
-    () => comparisonRequirements(activeHit, workspace.enemy, pool, settings.size, settings.maxCost),
-    [activeHit, workspace.enemy, pool, settings.size, settings.maxCost],
+    () => comparisonRequirements(activeHit, workspace.enemy, candidates, settings.size, settings.maxCost),
+    [activeHit, workspace.enemy, candidates, settings.size, settings.maxCost],
   );
   const baseCalculation = useMemo(() => {
     if (baseMissing.length)
@@ -289,32 +255,24 @@ export default function TeamsPage() {
     }
   }, [base, baseMissing]);
   const baseDamage = baseCalculation.damage;
-  const total = countCombinations(pool.length, settings.size);
+  const total = countCombinations(candidates.length, settings.size);
   const tooMany = total > MAX_COMBINATIONS;
-  const ranking = useMemo(() => {
-    if (tooMany || baseCalculation.error) return { results: [], error: null };
-    if (requirements.missing.length)
-      return {
-        results: [],
-        error: `Required for the selected providers: ${requirements.missing.map((item) => item.label).join(', ')}. Confirm these values before comparing combinations.`,
-      };
-    try {
-      return { results: rankTeams(base, pool, settings.size, settings.maxCost), error: null };
-    } catch (error) {
-      const message = calculationInputError(error);
-      if (message === null) throw error;
-      // Abort the comparison rather than silently excluding an uncomputable
-      // combination and presenting an incomplete ranking as the best result.
-      return { results: [], error: `Cannot calculate these combinations. ${message} Check the providers and base setup, then try again.` };
-    }
-  }, [base, pool, settings, tooMany, baseCalculation.error, requirements]);
-  const results = ranking.results;
-  const inPool = new Set(pool.map((u) => u.id));
+  const ranking = useTeamSearch({ base, pool: candidates, size: settings.size, maxCost: settings.maxCost });
+  const requirementError = requirements.missing.length
+    ? `Required for the selected providers: ${requirements.missing.map((item) => item.label).join(', ')}. Confirm these values before comparing combinations.`
+    : null;
+  const comparisonError = requirementError || ranking.error;
+  const results = ranking.result?.results ?? [];
   const index = workspace.hits.findIndex((h) => h.id === activeHit.id);
 
-  const toggle = (u: SupportUnit) => setPool((p) => (p.some((x) => x.id === u.id) ? p.filter((x) => x.id !== u.id) : [...p, u]));
-  const save = (u: SupportUnit) => {
-    setPool((p) => (p.some((x) => x.id === u.id) ? p.map((x) => (x.id === u.id ? u : x)) : [...p, u]));
+  const save = (unit: SupportUnit) => {
+    const provider = libraryProvider(unit);
+    setLibrary((current) => ({
+      ...current,
+      providers: current.providers.some((entry) => entry.id === provider.id)
+        ? current.providers.map((entry) => (entry.id === provider.id ? provider : entry))
+        : [...current.providers, provider],
+    }));
     setEditing(null);
   };
 
@@ -336,8 +294,8 @@ export default function TeamsPage() {
             Damage before added providers: <b>{baseDamage === null ? '—' : fmtInt(baseDamage)}</b>
           </p>
           <p className={ui.note}>
-            Effects entered in Calculator apply to every combination. Add only the extra provider effects below to avoid counting them twice. Results show
-            this attacker’s selected attack; the providers’ own attacks are not included.
+            Effects entered in Calculator apply to every combination. Add only the extra provider effects below to avoid counting them twice. Results show this
+            attacker’s selected attack; the providers’ own attacks are not included.
           </p>
           {baseCalculation.error && (
             <p role="alert" className={ui.note}>
@@ -384,98 +342,16 @@ export default function TeamsPage() {
           )}
         </Card>
 
-        <Card title="Buff providers" subtitle="Add all buff providers you want to compare. Teams tries different groups from this candidate pool to increase the fixed attacker’s damage.">
-          <div className={css.fileActions}>
-            <button type="button" className={ui.button} disabled={isImporting} onClick={() => fileInput.current?.click()}>
-              {isImporting ? 'Importing…' : 'Import providers'}
-            </button>
-            <button type="button" className={ui.button} disabled={pool.length === 0 || isImporting} onClick={exportProviders}>
-              <Icon name="arrowDown" /> Export providers
-            </button>
-            <input ref={fileInput} type="file" hidden accept=".json,application/json" aria-label="Import buff providers from JSON" onChange={importProviders} />
-          </div>
-          <p className={ui.note} role={providerSaveState === 'unavailable' ? 'alert' : 'status'}>
-            {providerSaveState === 'saved'
-              ? 'Saved automatically in this browser for this website address.'
-              : providerSaveState === 'unavailable'
-                ? 'Browser storage is unavailable. Export your providers to keep a backup before leaving this page.'
-                : 'Saving buff providers in this browser…'}
-          </p>
-          <p className={ui.note}>
-            Export a JSON backup to use your providers in another browser or at another website address. Import adds new providers and updates matching IDs;
-            other providers are kept.
-          </p>
-          {fileMessage && <p className={ui.note} role={fileMessage.kind === 'error' ? 'alert' : 'status'}>{fileMessage.text}</p>}
-          <div className={css.presets}>
-            {PRESET_UNITS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className={css.preset}
-                disabled={isImporting || (!inPool.has(p.id) && pool.length >= MAX_PROVIDERS)}
-                aria-pressed={inPool.has(p.id)}
-                aria-label={`${p.name}, ${p.skillCost} SP`}
-                onClick={() => toggle(p)}
-              >
-                <Avatar unit={p} size={40} />
-                <span className={css.presetName}>{p.name}</span>
-                <span className={css.presetCost}>{p.skillCost} SP</span>
-              </button>
-            ))}
-          </div>
-          <p className={ui.note}>
-            Community Beta 4 presets are unverified. Check skill values, costs, restrictions and stacking in game. Older presets may have unspecified
-            restrictions.
-          </p>
-          <button
-            type="button"
-            className={`${ui.button} ${ui.primary} ${ui.block}`}
-            disabled={isImporting || pool.length >= MAX_PROVIDERS}
-            onClick={() => setEditing({ id: newId(), name: '', skillCost: 80, effects: [{ type: 'soulDmg', value: 0, attribute: 'any' }], triggers: {} })}
-          >
-            <Icon name="plus" /> Create provider
-          </button>
-          <h3 className={ui.groupTitle}>Candidate providers ({pool.length})</h3>
-          {pool.length >= MAX_PROVIDERS && <p className={ui.note}>You can store up to {MAX_PROVIDERS} providers. Export a backup before removing entries to make room.</p>}
-          {pool.length === 0 ? (
-            <p className={css.empty}>Choose a preset above or create a provider to add its effects and skill cost.</p>
-          ) : (
-            <ul className={css.pool}>
-              {pool.map((u) => (
-                <li key={u.id} className={css.poolItem}>
-                  <Avatar unit={u} />
-                  <div className={css.poolMain}>
-                    <span>
-                      <b>{u.name}</b> <span className={css.muted}>{u.skillCost} SP</span>
-                    </span>
-                    <UnitChips unit={u} />
-                  </div>
-                  <button type="button" className={ui.iconButton} disabled={isImporting} aria-label={`Edit ${u.name}`} onClick={() => setEditing(u)}>
-                    <Icon name="edit" />
-                  </button>
-                  <button
-                    type="button"
-                    className={ui.iconButton}
-                    disabled={isImporting}
-                    aria-label={`Remove ${u.name}`}
-                    onClick={() => setPool((p) => p.filter((x) => x.id !== u.id))}
-                  >
-                    <Icon name="trash" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        <ProviderManager library={library} setLibrary={setLibrary} hitId={activeHit.id} saveState={providerSaveState} onEdit={setEditing} />
+      </div>
 
+      <div className={`${css.column} ${css.sticky}`}>
         <Card title="Combination rules">
           <p className={ui.note} aria-live="polite" aria-atomic="true">
             Compare combinations of exactly {settings.size} buff {settings.size === 1 ? 'provider' : 'providers'}
             {settings.maxCost > 0 ? ` costing at most ${fmtInt(settings.maxCost)} SP in total.` : ' with no skill-point limit.'}
           </p>
-          <p className={ui.note}>
-            Each provider contributes its applicable entered effects once to the fixed attack, and combinations are ranked by damage.
-          </p>
+          <p className={ui.note}>Each provider contributes its applicable entered effects once to the fixed attack, and combinations are ranked by damage.</p>
           <div className={ui.grid}>
             <Field label="Providers per combination" group>
               {() => (
@@ -487,31 +363,68 @@ export default function TeamsPage() {
                 />
               )}
             </Field>
-            <Field label="Skill point limit" note="Maximum total cost of the added providers. 0 = no limit.">
+            <Field label="Skill point limit" note="0 = no limit.">
               {(id) => <NumberInput id={id} value={settings.maxCost} suffix="SP" onChange={(maxCost) => setSettings((s) => ({ ...s, maxCost }))} />}
             </Field>
           </div>
         </Card>
-      </div>
-
-      <div className={`${css.column} ${css.sticky}`}>
         <Card
           title="Ranked buff combinations"
           subtitle={
             baseCalculation.error
               ? 'Edit the base setup to calculate buff combinations.'
-              : ranking.error
+              : comparisonError
                 ? 'The comparison is unavailable until the calculation inputs are corrected.'
                 : tooMany
                   ? `${fmtInt(total)} combinations is too many — remove providers or choose a smaller combination.`
-                  : pool.length < settings.size
-                    ? `Add at least ${settings.size} providers to the pool.`
-                    : `${fmtInt(results.length)} of ${fmtInt(total)} combinations fit the rules. Highest calculated damage first; lower skill cost breaks ties. All effects must be valid and active together.`
+                  : candidates.length < settings.size
+                    ? `Include at least ${settings.size} providers in the comparison.`
+                    : ranking.status === 'done'
+                      ? `${fmtInt(ranking.result?.eligible ?? 0)} of ${fmtInt(total)} combinations fit the rules. Showing the best ${Math.min(MAX_RANKED_TEAMS, results.length)}. Highest damage first; lower skill cost breaks ties. All effects must be valid and active together.`
+                      : 'Choose providers and rules, then compare. Editing inputs cancels an older search and clears its results.'
           }
         >
-          {ranking.error && (
+          <div className={css.fileActions}>
+            <button
+              type="button"
+              className={`${ui.button} ${ui.primary}`}
+              disabled={!!baseCalculation.error || !!requirementError || tooMany || total === 0 || ranking.status === 'running'}
+              onClick={() => {
+                setShown(PAGE);
+                ranking.start();
+              }}
+            >
+              Compare combinations
+            </button>
+            {ranking.status === 'running' && (
+              <button type="button" className={ui.button} onClick={ranking.cancel}>
+                Cancel comparison
+              </button>
+            )}
+          </div>
+          {ranking.status === 'running' && (
+            <div className={css.progressBox}>
+              <p role="status">Calculating combinations…</p>
+              <progress aria-label="Combination search progress" max={Math.max(1, total)} value={ranking.progress.visited} />
+              <p>
+                {Math.floor((ranking.progress.visited / Math.max(1, total)) * 100)}% · {fmtInt(ranking.progress.visited)} / {fmtInt(total)} checked ·{' '}
+                {fmtInt(ranking.progress.eligible)} fit the budget
+              </p>
+            </div>
+          )}
+          {ranking.status === 'cancelled' && (
+            <p className={ui.note} role="status">
+              Comparison cancelled. No partial ranking is shown. Press Compare combinations to start again.
+            </p>
+          )}
+          {ranking.status === 'done' && (
+            <p className={ui.note} role="status">
+              Comparison complete: {fmtInt(ranking.progress.visited)} combinations checked.
+            </p>
+          )}
+          {comparisonError && (
             <p role="alert" className={ui.note}>
-              {ranking.error}
+              {comparisonError}
             </p>
           )}
           {results.length > 0 && (

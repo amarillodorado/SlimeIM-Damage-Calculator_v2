@@ -1,14 +1,6 @@
 import type { SupportUnit, UnitEffect, UnitTriggers } from './teams';
 import { ATTRIBUTES, EFFECT_TYPE_IDS } from './types';
-import {
-  MAX_PROVIDERS,
-  MAX_PROVIDER_COST,
-  MAX_PROVIDER_EFFECTS,
-  MAX_PROVIDER_EFFECT_VALUE,
-  MAX_PROVIDER_FILE_BYTES,
-  MAX_PROVIDER_NAME,
-  MAX_PROVIDER_NOTE,
-} from './providerLimits';
+import { MAX_PROVIDER_COST, MAX_PROVIDER_EFFECTS, MAX_PROVIDER_EFFECT_VALUE, MAX_PROVIDER_NAME, MAX_PROVIDER_NOTE } from './providerLimits';
 
 const FORMAT = 'slimeim-buff-providers';
 const VERSION = 1;
@@ -27,8 +19,7 @@ function knownFields(value: RecordValue, allowed: readonly string[], path: strin
 }
 
 function nonemptyString(value: unknown, max: number, path: string): string {
-  if (typeof value !== 'string' || !value.trim() || value.length > max)
-    throw new Error(`${path} must contain 1–${max} characters and cannot be blank.`);
+  if (typeof value !== 'string' || !value.trim() || value.length > max) throw new Error(`${path} must contain 1–${max} characters and cannot be blank.`);
   return value;
 }
 
@@ -68,7 +59,8 @@ function triggers(value: unknown, path: string): UnitTriggers {
 function provider(value: unknown, index: number): SupportUnit {
   const path = `Provider ${index + 1}`;
   const raw = record(value, path);
-  knownFields(raw, ['id', 'name', 'skillCost', 'icon', 'effects', 'triggers', 'note'], path);
+  knownFields(raw, ['id', 'name', 'skillCost', 'icon', 'effects', 'triggers', 'note', 'enabled'], path);
+  if (raw.enabled !== undefined && typeof raw.enabled !== 'boolean') throw new Error(`${path}.enabled must be true or false.`);
   const id = nonemptyString(raw.id, MAX_ID, `${path}.id`);
   const name = nonemptyString(raw.name, MAX_PROVIDER_NAME, `${path}.name`);
   if (typeof raw.skillCost !== 'number' || !Number.isInteger(raw.skillCost) || raw.skillCost < 0 || raw.skillCost > MAX_PROVIDER_COST)
@@ -82,6 +74,7 @@ function provider(value: unknown, index: number): SupportUnit {
   return {
     id,
     name,
+    ...(raw.enabled === undefined ? {} : { enabled: raw.enabled as boolean }),
     skillCost: raw.skillCost,
     ...(raw.icon === undefined ? {} : { icon: raw.icon as string }),
     effects: raw.effects.map((entry, effectIndex) => effect(entry, `${path}, effect ${effectIndex + 1}`)),
@@ -93,7 +86,6 @@ function provider(value: unknown, index: number): SupportUnit {
 /** Strict validation rejects the whole list rather than dropping or truncating entries. */
 function providerList(value: unknown): SupportUnit[] {
   if (!Array.isArray(value)) throw new Error('The file must contain a providers array.');
-  if (value.length > MAX_PROVIDERS) throw new Error(`A provider library can contain at most ${MAX_PROVIDERS} providers.`);
   const result = value.map(provider);
   const seen = new Set<string>();
   for (const unit of result) {
@@ -105,7 +97,6 @@ function providerList(value: unknown): SupportUnit[] {
 
 /** Accept the versioned format or an older raw provider array; do not alter current data on failure. */
 export function parseProviderFile(text: string): SupportUnit[] {
-  if (new TextEncoder().encode(text).byteLength > MAX_PROVIDER_FILE_BYTES) throw new Error('The provider file is too large. The limit is 1 MB.');
   let parsed: unknown;
   try {
     parsed = JSON.parse(text.replace(/^\uFEFF/, ''));
@@ -122,9 +113,7 @@ export function parseProviderFile(text: string): SupportUnit[] {
 
 /** A portable backup contains provider data only, without the Calculator setup or comparison rules. */
 export function exportProviderFile(providers: SupportUnit[]): string {
-  const output = JSON.stringify({ format: FORMAT, version: VERSION, providers: providerList(providers) }, null, 2) + '\n';
-  if (new TextEncoder().encode(output).byteLength > MAX_PROVIDER_FILE_BYTES) throw new Error('The provider file is too large. The limit is 1 MB.');
-  return output;
+  return JSON.stringify({ format: FORMAT, version: VERSION, providers: providerList(providers) }, null, 2) + '\n';
 }
 
 export interface ProviderMergeResult {
@@ -139,7 +128,9 @@ export function mergeProviders(current: SupportUnit[], incoming: SupportUnit[]):
   const providers = providerList(current);
   const imported = providerList(incoming);
   const positions = new Map(providers.map((unit, index) => [unit.id, index]));
-  let added = 0, updated = 0, unchanged = 0;
+  let added = 0,
+    updated = 0,
+    unchanged = 0;
   for (const unit of imported) {
     const index = positions.get(unit.id);
     if (index === undefined) {
@@ -153,6 +144,5 @@ export function mergeProviders(current: SupportUnit[], incoming: SupportUnit[]):
       updated++;
     }
   }
-  if (providers.length > MAX_PROVIDERS) throw new Error(`Import would exceed ${MAX_PROVIDERS} providers. Remove some providers before importing.`);
   return { providers, added, updated, unchanged };
 }

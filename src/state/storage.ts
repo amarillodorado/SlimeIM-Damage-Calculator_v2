@@ -49,6 +49,8 @@ export function usePersistentState<T>(key: string, init: () => T, normalize: (ra
 
 export const STORAGE_KEYS = {
   workspace: 'slimeim.v6.1.workspace',
+  recovery: 'slimeim.v6.workspaceRecovery',
   units: 'slimeim.v6.units',
+  providerLibrary: 'slimeim.v6.providerLibrary',
   teamSettings: 'slimeim.v6.teamSettings',
 } as const;

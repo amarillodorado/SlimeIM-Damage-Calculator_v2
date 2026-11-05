@@ -22,6 +22,8 @@ export interface UnitTriggers {
 export interface SupportUnit {
   id: string;
   name: string;
+  /** Stored library entries can be excluded from comparisons without deleting them. */
+  enabled?: boolean;
   skillCost: number;
   icon?: string;
   effects: UnitEffect[];
@@ -92,6 +94,7 @@ export function countCombinations(n: number, k: number): number {
 
 /** Every team of exactly `size` units whose skill cost fits `maxCost` (0 = no limit), best first. */
 export function rankTeams(base: HitInput, pool: SupportUnit[], size: number, maxCost: number): TeamResult[] {
+  pool = pool.filter((unit) => unit.enabled !== false);
   if (size < 1 || size > pool.length || countCombinations(pool.length, size) > MAX_COMBINATIONS) return [];
   const results: TeamResult[] = [];
   for (const units of combinations(pool, size)) {

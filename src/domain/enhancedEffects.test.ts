@@ -66,7 +66,10 @@ describe('separate enhanced attribute factors', () => {
     hit.enemy.attribute = attribute;
     const label = ATTRIBUTE_LABEL[attribute];
     expect(ENHANCED.map((id) => effectLabel(id, hit))).toEqual([
-      `${label}+ ATK UP`, `${label}+ damage UP`, `${label}+ resistance DOWN`, `${label}+ damage resistance DOWN`,
+      `${label}+ ATK UP`,
+      `${label}+ damage UP`,
+      `${label}+ resistance DOWN`,
+      `${label}+ damage resistance DOWN`,
     ]);
     for (const id of ENHANCED) expect(effectApplies(id, hit).applies).toBe(true);
     hit.effects.enhancedElementResDown = 30;
@@ -78,8 +81,15 @@ describe('separate enhanced attribute factors', () => {
     const hit = input(effects);
     const restored = normalizeWorkspace({ enemy: hit.enemy, hits: [{ id: 'enhanced', attacker: hit.attacker, attack: hit.attack, effects }] });
     expect(restored.hits[0]!.effects).toEqual(effects);
-    const providers: SupportUnit[] = [{ id: 'enhanced-provider', name: 'Enhanced effects', skillCost: 80,
-      effects: ENHANCED.map((type) => ({ type, value: effects[type as keyof typeof effects], attribute: 'dark', attackType: 'magic', target: 'single' })), triggers: {} }];
+    const providers: SupportUnit[] = [
+      {
+        id: 'enhanced-provider',
+        name: 'Enhanced effects',
+        skillCost: 80,
+        effects: ENHANCED.map((type) => ({ type, value: effects[type as keyof typeof effects], attribute: 'dark', attackType: 'magic', target: 'single' })),
+        triggers: {},
+      },
+    ];
     expect(parseProviderFile(exportProviderFile(providers))[0]!.effects).toEqual(providers[0]!.effects);
   });
 });

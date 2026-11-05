@@ -22,6 +22,10 @@ export function QuickStart() {
     <Card id="guide-start" title="Quick start" subtitle="Enter one recorded hit, then compare it with the calculation.">
       <div className={css.prose}>
         <p>
+          First visits include a fictional Super Critical example with 6,900 calculated damage. Use Clear to enter your own battle, or Load example to open the
+          demonstration again. Existing saved workspaces are kept; they are not replaced by the example.
+        </p>
+        <p>
           Highlight required inputs starts on. Click a required choice even if it is already selected, and enter or explicitly confirm numeric values. Missing
           inputs remain listed beside the result; calculation starts automatically when this setup is complete. Turning highlighting off keeps these checks
           active. Synergy requires support ATK, Aegis requires your current DEF, and True Attribute Unbound requires only the factor matching the selected
@@ -33,8 +37,8 @@ export function QuickStart() {
           </li>
           <li>
             <b>Attack:</b> copy the damage percentage from the soul actually used, choose its version, and select the special hits and Weak Point popup that
-            appeared. Ordinary souls use 100% base power unless their attack is replaced. Enter the eligible finisher damage factor separately from the displayed
-            chain BONUS.
+            appeared. Ordinary souls use 100% base power unless their attack is replaced. Enter the eligible finisher damage factor separately from the
+            displayed chain BONUS.
           </li>
           <li>
             <b>Enemy:</b> copy the current attribute, DEF and attack resistances, including minus signs.
@@ -143,125 +147,128 @@ export function TwoWays() {
           <b>Quickest lookup:</b> on the troop screen, <b>Skills</b> shows the equipment enchantments, EX ability effects and traits of the whole troop in
           separate tabs, so you don’t have to open every character page.
         </p>
-        <h3>Worked example: Milim’s Ultimate on a Tornado Spider</h3>
-        <p>Every input of one real hit and where it was read. The game showed 4,134,209; the calculator gives exactly that number (roll 1.0042).</p>
       </div>
-      <div className={css.tableWrap}>
-        <table className={css.table}>
-          <thead>
-            <tr>
-              <th scope="col">Input</th>
-              <th scope="col">Value</th>
-              <th scope="col">Read from</th>
-            </tr>
-          </thead>
-          <tbody>
-            {WORKED_EXAMPLE.map(([input, value, source]) => (
-              <tr key={input}>
-                <th scope="row">{input}</th>
-                <td className={css.num}>{value}</td>
-                <td>{source}</td>
+      <details className={css.workedExample}>
+        <summary>Worked example: Milim’s Ultimate on a Tornado Spider</summary>
+        <div className={css.prose}>
+          <p>Every input of one real hit and where it was read. The game showed 4,134,209; the calculator gives exactly that number (roll 1.0042).</p>
+        </div>
+        <div className={css.tableWrap}>
+          <table className={css.table}>
+            <thead>
+              <tr>
+                <th scope="col">Input</th>
+                <th scope="col">Value</th>
+                <th scope="col">Read from</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className={css.prose}>
-        <h3>During the battle</h3>
-      </div>
-      <div className={css.gallery}>
-        <Figure src="battle-info-milim.webp" width={842} height={909} alt="Battle info panel: Milim, Dark+ magic, ATK 28,203">
-          <b>Battle info</b> (tap your character): ATK 28,203 already includes every ATK bonus.
-        </Figure>
-        <Figure
-          src="battle-effects-milim.webp"
-          width={842}
-          height={909}
-          alt="Battle Effect List: damage to wind 106%, ATK 92%, synergy power 40%, pierce power 15%"
-        >
-          <b>Effect List:</b> damage vs. Wind 106%, ATK 92% (already in the Battle ATK), Synergy Power 40% and Pierce Power 15% from Kokuyo’s trait.
-        </Figure>
-        <Figure
-          src="battle-effects-milim-2.webp"
-          width={842}
-          height={909}
-          alt="Battle Effect List: critical rate 100%, critical power 40%, space and dark ATK 120%"
-        >
-          <b>Effect List, further down:</b> Critical Power 40% and Dark ATK 120% for this turn. Rates only decide whether a special hit happens.
-        </Figure>
-        <Figure src="enemy-tornado-spider.webp" width={842} height={909} alt="Enemy info: Tornado Spider, wind, DEF 3,413, magic resistance −20%">
-          <b>Enemy info:</b> attribute, DEF 3,413 and magic resistance −20%. Enamor and the seals don’t change your damage.
-        </Figure>
-        <Figure src="ultimate-card-milim.webp" width={900} height={423} alt="Ultimate Soul of Combos: 1080% damage, increases damage by 40%">
-          <b>The soul you used:</b> 1080% as shown (the ×1.8 is already in it) and its own effect, damage +40%.
-        </Figure>
-        <Figure src="hit-popups-milim.webp" width={900} height={413} alt="Hit popups: Super Weak Point, Pierce, Critical, Synergy and 4,134,209 damage">
-          <b>Popups on the hit:</b> Super Weak Point, Pierce, Critical and Synergy — select exactly these. Check a real hit compares the number.
-        </Figure>
-      </div>
-      <div className={css.prose}>
-        <h3>Before the battle</h3>
-      </div>
-      <div className={css.gallery}>
-        <Figure
-          src="troop-screen.webp"
-          width={900}
-          height={394}
-          alt="Troop screen: protector with two supporting protectors, battle characters with their support characters"
-        >
-          <b>Troop:</b> the protector on the left with two supporting protectors below it; every battle character has its support character below it.
-        </Figure>
-        <Figure
-          src="troop-stats-milim.webp"
-          width={651}
-          height={759}
-          alt="Troop screen after Status Attributes: HP 22,417, ATK 9,682, DEF 7,918 under Milim; Skills button below"
-        >
-          <b>Troop ATK:</b> Status Attributes switches the numbers under each character to HP, ATK and DEF. Use this lineup total for pre-battle mode; it includes equipment,
-          the attached support character, applicable EX abilities and the protector’s flat ATK contribution. The Divine Protection’s percentage ATK boost is
-          not included. <b>Skills</b> lists the troop’s enchantments, EX
-          ability effects and traits.
-        </Figure>
-        <Figure src="character-page-milim.webp" width={764} height={779} alt="Character page: Milim, ATK 7,234">
-          <b>Character page:</b> attribute and attack type. Its ATK 7,234 is the character alone — pre-battle mode uses the troop ATK instead.
-        </Figure>
-        <Figure src="support-page-kokuyo.webp" width={764} height={779} alt="Support character page: Kokuyo, ATK 6,886">
-          <b>Support character:</b> Kokuyo’s own ATK 6,886 — Synergy adds 40% of it.
-        </Figure>
-        <Figure src="detailed-stats-milim.webp" width={794} height={753} alt="Detailed stats: critical damage 32%, pierce power 12%">
-          <b>Detailed stats</b> (Info): Critical Damage 32% and Pierce Power 12% — never shown in battle.
-        </Figure>
-        <Figure src="ex-ability-milim.webp" width={863} height={845} alt="EX abilities: Individual Mercy critical damage +12%, Magic Mercy ATK +190">
-          <b>EX abilities:</b> Individual Mercy adds 12% critical damage while Rimuru is in a battle slot. Magic Mercy’s flat ATK is already in the troop ATK
-          and the Battle ATK.
-        </Figure>
-        <Figure src="equipment-milim.webp" width={863} height={573} alt="Equipment: Claws of Shadowy Twilight, critical power +12% twice, pierce power +12%">
-          <b>Equipment:</b> the Claws’ critical power +12% twice and pierce power +12% are already part of the detailed stats.
-        </Figure>
-        <Figure src="tau-milim.webp" width={863} height={325} alt="True Attribute Unbound: turns 3 to 5, Weak Point ×1.2, Super Weak Point ×1.3">
-          <b>True Attribute Unbound</b> (skill page): turns 3–5, ×1.2 on a Weak Point and ×1.3 on a Super Weak Point.
-        </Figure>
-        <Figure
-          src="protector-elmesia.webp"
-          width={863}
-          height={836}
-          alt="Divine Protection: damage to wind enemies +106% for Divine General, magic characters ATK and DEF +25%"
-        >
-          <b>Protector:</b> +106% damage to Wind enemies for Divine General members and +25% ATK/DEF for magic characters.
-        </Figure>
-        <Figure src="protection-skill-elmesia.webp" width={863} height={646} alt="Protection skill: ATK +14% for all allies until the end of battle">
-          <b>Protection skill:</b> +14% ATK for all allies until the end of the battle, each time it is used — one reason the Battle ATK grows during a fight.
-        </Figure>
-        <Figure
-          src="supporting-protection-guy.webp"
-          width={863}
-          height={836}
-          alt="Supporting protector: Supporting Divine Protection, speed-type magic characters ATK +14%"
-        >
-          <b>Supporting protector:</b> only its “Supporting Divine Protection” line counts (here +14% ATK for speed-type magic characters), not its main
-          protection.
-        </Figure>
-      </div>
+            </thead>
+            <tbody>
+              {WORKED_EXAMPLE.map(([input, value, source]) => (
+                <tr key={input}>
+                  <th scope="row">{input}</th>
+                  <td className={css.num}>{value}</td>
+                  <td>{source}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className={css.prose}>
+          <h3>During the battle</h3>
+        </div>
+        <div className={css.gallery}>
+          <Figure src="battle-info-milim.webp" width={842} height={909} alt="Battle info panel: Milim, Dark+ magic, ATK 28,203">
+            <b>Battle info</b> (tap your character): ATK 28,203 already includes every ATK bonus.
+          </Figure>
+          <Figure
+            src="battle-effects-milim.webp"
+            width={842}
+            height={909}
+            alt="Battle Effect List: damage to wind 106%, ATK 92%, synergy power 40%, pierce power 15%"
+          >
+            <b>Effect List:</b> damage vs. Wind 106%, ATK 92% (already in the Battle ATK), Synergy Power 40% and Pierce Power 15% from Kokuyo’s trait.
+          </Figure>
+          <Figure
+            src="battle-effects-milim-2.webp"
+            width={842}
+            height={909}
+            alt="Battle Effect List: critical rate 100%, critical power 40%, space and dark ATK 120%"
+          >
+            <b>Effect List, further down:</b> Critical Power 40% and Dark ATK 120% for this turn. Rates only decide whether a special hit happens.
+          </Figure>
+          <Figure src="enemy-tornado-spider.webp" width={842} height={909} alt="Enemy info: Tornado Spider, wind, DEF 3,413, magic resistance −20%">
+            <b>Enemy info:</b> attribute, DEF 3,413 and magic resistance −20%. Enamor and the seals don’t change your damage.
+          </Figure>
+          <Figure src="ultimate-card-milim.webp" width={900} height={423} alt="Ultimate Soul of Combos: 1080% damage, increases damage by 40%">
+            <b>The soul you used:</b> 1080% as shown (the ×1.8 is already in it) and its own effect, damage +40%.
+          </Figure>
+          <Figure src="hit-popups-milim.webp" width={900} height={413} alt="Hit popups: Super Weak Point, Pierce, Critical, Synergy and 4,134,209 damage">
+            <b>Popups on the hit:</b> Super Weak Point, Pierce, Critical and Synergy — select exactly these. Check a real hit compares the number.
+          </Figure>
+        </div>
+        <div className={css.prose}>
+          <h3>Before the battle</h3>
+        </div>
+        <div className={css.gallery}>
+          <Figure
+            src="troop-screen.webp"
+            width={900}
+            height={394}
+            alt="Troop screen: protector with two supporting protectors, battle characters with their support characters"
+          >
+            <b>Troop:</b> the protector on the left with two supporting protectors below it; every battle character has its support character below it.
+          </Figure>
+          <Figure
+            src="troop-stats-milim.webp"
+            width={651}
+            height={759}
+            alt="Troop screen after Status Attributes: HP 22,417, ATK 9,682, DEF 7,918 under Milim; Skills button below"
+          >
+            <b>Troop ATK:</b> Status Attributes switches the numbers under each character to HP, ATK and DEF. Use this lineup total for pre-battle mode; it
+            includes equipment, the attached support character, applicable EX abilities and the protector’s flat ATK contribution. The Divine Protection’s
+            percentage ATK boost is not included. <b>Skills</b> lists the troop’s enchantments, EX ability effects and traits.
+          </Figure>
+          <Figure src="character-page-milim.webp" width={764} height={779} alt="Character page: Milim, ATK 7,234">
+            <b>Character page:</b> attribute and attack type. Its ATK 7,234 is the character alone — pre-battle mode uses the troop ATK instead.
+          </Figure>
+          <Figure src="support-page-kokuyo.webp" width={764} height={779} alt="Support character page: Kokuyo, ATK 6,886">
+            <b>Support character:</b> Kokuyo’s own ATK 6,886 — Synergy adds 40% of it.
+          </Figure>
+          <Figure src="detailed-stats-milim.webp" width={794} height={753} alt="Detailed stats: critical damage 32%, pierce power 12%">
+            <b>Detailed stats</b> (Info): Critical Damage 32% and Pierce Power 12% — never shown in battle.
+          </Figure>
+          <Figure src="ex-ability-milim.webp" width={863} height={845} alt="EX abilities: Individual Mercy critical damage +12%, Magic Mercy ATK +190">
+            <b>EX abilities:</b> Individual Mercy adds 12% critical damage while Rimuru is in a battle slot. Magic Mercy’s flat ATK is already in the troop ATK
+            and the Battle ATK.
+          </Figure>
+          <Figure src="equipment-milim.webp" width={863} height={573} alt="Equipment: Claws of Shadowy Twilight, critical power +12% twice, pierce power +12%">
+            <b>Equipment:</b> the Claws’ critical power +12% twice and pierce power +12% are already part of the detailed stats.
+          </Figure>
+          <Figure src="tau-milim.webp" width={863} height={325} alt="True Attribute Unbound: turns 3 to 5, Weak Point ×1.2, Super Weak Point ×1.3">
+            <b>True Attribute Unbound</b> (skill page): turns 3–5, ×1.2 on a Weak Point and ×1.3 on a Super Weak Point.
+          </Figure>
+          <Figure
+            src="protector-elmesia.webp"
+            width={863}
+            height={836}
+            alt="Divine Protection: damage to wind enemies +106% for Divine General, magic characters ATK and DEF +25%"
+          >
+            <b>Protector:</b> +106% damage to Wind enemies for Divine General members and +25% ATK/DEF for magic characters.
+          </Figure>
+          <Figure src="protection-skill-elmesia.webp" width={863} height={646} alt="Protection skill: ATK +14% for all allies until the end of battle">
+            <b>Protection skill:</b> +14% ATK for all allies until the end of the battle, each time it is used — one reason the Battle ATK grows during a fight.
+          </Figure>
+          <Figure
+            src="supporting-protection-guy.webp"
+            width={863}
+            height={836}
+            alt="Supporting protector: Supporting Divine Protection, speed-type magic characters ATK +14%"
+          >
+            <b>Supporting protector:</b> only its “Supporting Divine Protection” line counts (here +14% ATK for speed-type magic characters), not its main
+            protection.
+          </Figure>
+        </div>
+      </details>
     </Card>
   );
 }
@@ -283,8 +290,9 @@ export function AtkGuide() {
           <h3>B · Estimated pre-battle ATK</h3>
           <ol>
             <li>
-              Troop screen → press <b>Status Attributes</b> until HP, ATK and DEF show, and copy the ATK under your character. This lineup total includes equipment, the attached support character,
-              applicable EX abilities and the protector’s flat ATK contribution. The Divine Protection’s percentage ATK boost is not included.
+              Troop screen → press <b>Status Attributes</b> until HP, ATK and DEF show, and copy the ATK under your character. This lineup total includes
+              equipment, the attached support character, applicable EX abilities and the protector’s flat ATK contribution. The Divine Protection’s percentage
+              ATK boost is not included.
             </li>
             <li>
               Add up every “Increased ATK by X%” the character gets in battle — Divine Protection, supporting protections, protection skills (each use), traits
@@ -435,22 +443,23 @@ export function PopupsGuide() {
           itself replace that natural matchup.
         </p>
         <p>
-          Ordinary and “+” attribute effects use separate fields under All types. “Decrease all targets’ all enhanced attribute damage resistance” belongs
-          to the matching “+” damage resistance DOWN field, such as Dark+ damage resistance DOWN for a Dark+ attack. Each attack receives its matching factor
-          once. “All targets” identifies the enemies receiving the debuff and does not restrict the bonus to AoE attacks.
+          Matching ordinary and “+” attribute effects are shown directly in Buffs &amp; debuffs. “Decrease all targets’ all enhanced attribute damage
+          resistance” belongs to the matching “+” damage resistance DOWN field, such as Dark+ damage resistance DOWN for a Dark+ attack. Each attack receives
+          its matching factor once. “All targets” identifies the enemies receiving the debuff and does not restrict the bonus to AoE attacks.
         </p>
         <p>
-          An Ultimate Soul of Combos “greatly increases damage to weak attributes”: on a natural advantage it adds its bonus to this base. The supplied
-          master table confirms 40% for level-120 [Armored Dragonoid] Milim, giving <b>1.5 + 0.1 + 0.4 = ×2.0</b> with Dark+. Other recovered Epic entries
-          have 10%; the bonus depends on the character and upgrade. The 40% starting value remains editable. A Weak Point result on a neutral matchup does not activate it.
-          The Base attribute matchup selector shows the base; the “=” line below it adds the “+”, Ultimate and Weakness Strike contributions. TAU is a separate factor.
+          An Ultimate Soul of Combos “greatly increases damage to weak attributes”: on a natural advantage it adds its bonus to this base. The supplied master
+          table confirms 40% for level-120 [Armored Dragonoid] Milim, giving <b>1.5 + 0.1 + 0.4 = ×2.0</b> with Dark+. Other recovered Epic entries have 10%;
+          the bonus depends on the character and upgrade. The 40% starting value remains editable. A Weak Point result on a neutral matchup does not activate
+          it. The Base attribute matchup selector shows the base; the “=” line below it adds the “+”, Ultimate and Weakness Strike contributions. TAU is a
+          separate factor.
         </p>
         <h3>Weak Point and Super Weak Point</h3>
         <p>
-          Attribute-side weakness can come from the natural matchup or an applicable protection bonus such as “damage to Wind enemies UP”. The protection
-          bonus must apply to this attacker and the enemy’s attribute. Super Weak Point also requires the enemy to be weak to the attack type actually used:
-          Physical for a physical attacker, Magic for a magic attacker. Check the enemy’s corresponding Attack Resistance; the recovered client requires
-          −20% or lower for this attack-type condition.
+          Attribute-side weakness can come from the natural matchup or an applicable protection bonus such as “damage to Wind enemies UP”. The protection bonus
+          must apply to this attacker and the enemy’s attribute. Super Weak Point also requires the enemy to be weak to the attack type actually used: Physical
+          for a physical attacker, Magic for a magic attacker. Check the enemy’s corresponding Attack Resistance; the recovered client requires −20% or lower
+          for this attack-type condition.
         </p>
         <div className={css.tableWrap}>
           <table className={css.table} aria-label="Weak Point conditions">
@@ -462,36 +471,51 @@ export function PopupsGuide() {
               </tr>
             </thead>
             <tbody>
-              <tr><td>Yes</td><td>Yes</td><td>Super Weak Point</td></tr>
-              <tr><td>Yes</td><td>No</td><td>Weak Point</td></tr>
-              <tr><td>No</td><td>Yes or no</td><td>No weakness message</td></tr>
+              <tr>
+                <td>Yes</td>
+                <td>Yes</td>
+                <td>Super Weak Point</td>
+              </tr>
+              <tr>
+                <td>Yes</td>
+                <td>No</td>
+                <td>Weak Point</td>
+              </tr>
+              <tr>
+                <td>No</td>
+                <td>Yes or no</td>
+                <td>No weakness message</td>
+              </tr>
             </tbody>
           </table>
         </div>
         <p>
-          <b>Example:</b> magic Milim with an applicable damage-to-Wind protection bonus shows <b>Weak Point</b> against a Wind enemy weak only to Physical.
-          If the enemy is also weak to Magic, the result is <b>Super Weak Point</b>. The protection bonus supplies the attribute-side condition; the enemy’s
+          <b>Example:</b> magic Milim with an applicable damage-to-Wind protection bonus shows <b>Weak Point</b> against a Wind enemy weak only to Physical. If
+          the enemy is also weak to Magic, the result is <b>Super Weak Point</b>. The protection bonus supplies the attribute-side condition; the enemy’s
           Physical weakness does not satisfy the Magic condition for Milim.
         </p>
         <p>
-          Under Weakness result, select the outcome observed in battle. A neutral Dark-to-Wind matchup stays at base ×1 even when the protection bonus enables a weakness message;
-          enter the damage-to-Wind bonus separately. Apply eligible Weakness Strike effects and True Attribute Unbound through the selected result, without
-          adding another natural-attribute multiplier. The <a href="https://ten-sura-m.bn-ent.net/beginner/faq/" target="_blank" rel="noreferrer">official game guide</a>
-          {' '}also explains how protection bonuses against an enemy attribute can make it count as a weakness.
+          Under Weakness result, select the outcome observed in battle. A neutral Dark-to-Wind matchup stays at base ×1 even when the protection bonus enables a
+          weakness message; enter the damage-to-Wind bonus separately. Apply eligible Weakness Strike effects and True Attribute Unbound through the selected
+          result, without adding another natural-attribute multiplier. The{' '}
+          <a href="https://ten-sura-m.bn-ent.net/beginner/faq/" target="_blank" rel="noreferrer">
+            official game guide
+          </a>{' '}
+          also explains how protection bonuses against an enemy attribute can make it count as a weakness.
         </p>
         <h3>Special hits: Critical, Pierce, Synergy, Aegis</h3>
         <p>
-          Switch on the ones whose popup appeared. Their power and the enemy’s resistance DOWN are entered right below each switch in the Attack section; this is
-          what they do to the damage:
+          Switch on the ones whose popup appeared. Their power and the enemy’s resistance DOWN are entered right below each switch in the Attack section; this
+          is what they do to the damage:
         </p>
         <dl className={css.dl}>
           <dt>Critical</dt>
           <dd>× (1.3 + Critical Power / 100 + enemy Critical Resistance DOWN / 100).</dd>
           <dt>Super Critical</dt>
           <dd>
-            Uses a base factor of 1.5 and multiplies favorable Critical Power UP and enemy Critical Resistance DOWN bonuses by 1.3. Critical Power DOWN
-            and enemy Critical Resistance UP remain unscaled. These recovered constants apply automatically and replace the ordinary Critical multiplier.
-            Its chance is checked after an ordinary Critical succeeds; Super Critical Rate does not increase the ordinary Critical chance.
+            Uses a base factor of 1.5 and multiplies favorable Critical Power UP and enemy Critical Resistance DOWN bonuses by 1.3. Critical Power DOWN and
+            enemy Critical Resistance UP remain unscaled. These recovered constants apply automatically and replace the ordinary Critical multiplier. Its chance
+            is checked after an ordinary Critical succeeds; Super Critical Rate does not increase the ordinary Critical chance.
           </dd>
           <dt>Pierce</dt>
           <dd>
@@ -511,8 +535,8 @@ export function PopupsGuide() {
           </dd>
           <dt>Weak Point / Super Weak Point</dt>
           <dd>
-            Select the observed outcome under Weakness result to apply eligible Weakness Strike effects and the appropriate True Attribute Unbound factor. Do not add another
-            natural-affinity multiplier just because a popup appeared.
+            Select the observed outcome under Weakness result to apply eligible Weakness Strike effects and the appropriate True Attribute Unbound factor. Do
+            not add another natural-affinity multiplier just because a popup appeared.
           </dd>
           <dt>Rates</dt>
           <dd>Proc rates decide whether an outcome happens. This calculator evaluates selected outcomes and does not roll their chances.</dd>
@@ -540,8 +564,8 @@ export function ComboGuide() {
     <Card id="guide-combo" title="Combo bonus" subtitle="The displayed chain BONUS and the damage finisher factor are separate values.">
       <div className={css.prose}>
         <p>
-          Choose None (100%) under Soul Combos for 1–3 soul combos and for souls that are not finishers. The displayed 3 COMBO / BONUS 110% does not give that attack
-          10% more damage; the client has a separate gauge-point bonus. Select the Soul Combos setting that applies to this attack.
+          Choose None (100%) under Soul Combos for 1–3 soul combos and for souls that are not finishers. The displayed 3 COMBO / BONUS 110% does not give that
+          attack 10% more damage; the client has a separate gauge-point bonus. Select the Soul Combos setting that applies to this attack.
         </p>
         <p>
           Only the last eligible normal soul gains the finisher factor in a chain of four, five or six souls: select the matching 110%, 150% or 200% option.
@@ -595,7 +619,10 @@ const ORDER: [string, string][] = [
     'Damage-power/resistance groups, condition effects, resolved combo, Critical, Guard, eligible soul effects and the soul’s displayed damage percentage.',
   ],
   ['Pierce', 'Add its ATK-based term, then apply its power/resistance factor.'],
-  ['After Pierce', 'Synergy and Aegis rates, affinity and weakness effects, True Attribute Unbound, and supported late additive effects.'],
+  [
+    'After Pierce',
+    'Synergy and Aegis power/resistance multipliers, affinity and weakness effects, True Attribute Unbound, and supported late additive effects.',
+  ],
   ['Final damage', 'Round up once at the final damage stage, minimum 1, with the modeled global cap.'],
 ];
 export function FormulaGuide() {
@@ -656,7 +683,10 @@ export function Glossary() {
       'A skill activated with skill points. Enter its supported buffs here; direct-damage battle skills are outside this calculator’s modeled hit types.',
     ],
     ['Attached support character', 'The character below a battle character in the troop. Its own ATK is the Synergy support input.'],
-    ['Buff provider', 'A candidate source of buffs or enemy debuffs for the fixed attacker and enemy in Teams. Each entry contributes its entered effects at its total skill cost. This is separate from the attached support slot.'],
+    [
+      'Buff provider',
+      'A candidate source of buffs or enemy debuffs for the fixed attacker and enemy in Teams. Each entry contributes its entered effects at its total skill cost. This is separate from the attached support slot.',
+    ],
     [
       'Critical Power / Critical Damage',
       'Critical Power is official buff wording; Critical Damage is used for the detailed stat. Identify duplicate sources before adding values.',
@@ -682,9 +712,10 @@ export function Limits() {
     <Card id="guide-limits" title="Limits and open questions">
       <div className={css.prose}>
         <p>
-          <b>Super Critical values:</b> the supplied official master table confirms a 1.5 base and 1.3 multiplier on favorable bonuses; both apply automatically.
-          <b> Unsupported paths:</b> counterattacks, multi-hit distribution,
-          barriers, absorption, damage over time, Vengeance and direct-damage battle skills are not simulated by this interface.
+          <b>Super Critical values:</b> the supplied official master table confirms a 1.5 base and 1.3 multiplier on favorable bonuses; both apply
+          automatically.
+          <b> Unsupported paths:</b> counterattacks, multi-hit distribution, barriers, absorption, damage over time, Vengeance and direct-damage battle skills
+          are not simulated by this interface.
         </p>
         <p>
           <b>Planning limits:</b> pre-battle ATK composition is estimated. The generic ordinary-soul damage category is an explicit grouping assumption. A team

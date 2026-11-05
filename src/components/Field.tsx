@@ -6,6 +6,7 @@ import { WorkspaceContext } from '../state/workspaceContext';
 import { HelpPopover } from './HelpPopover';
 import { ConfidenceBadge } from './layout';
 import ui from './ui.module.css';
+import { FieldAccessibility } from './fieldAccessibility';
 
 interface FieldProps {
   /** Help entry from the catalogue; provides the label and the "i" explanation. */
@@ -48,15 +49,63 @@ export function Field({ help, info, label, badge, note, wide, group, inputKey, p
   const body = (
     <>
       <div className={ui.labelRow}>
-        {group ? (
-          <span className={ui.label} id={`${id}-label`}>
-            {text}
+        {required && (
+          <span id={`${id}-required`} className="sr-only">
+            {missing ? 'Required input awaiting confirmation.' : 'Required input confirmed.'}
           </span>
-        ) : (
-          <label className={ui.label} htmlFor={id}>
-            {text}
-          </label>
         )}
+        <div className={ui.fieldTitle}>
+          {group ? (
+            <span className={ui.label} id={`${id}-label`}>
+              {text}
+            </span>
+          ) : (
+            <label className={ui.label} htmlFor={id}>
+              {text}
+            </label>
+          )}
+          {entry && (
+            <HelpPopover title={text}>
+              <dl className={ui.helpList}>
+                {entry.game && (
+                  <>
+                    <dt>In the game</dt>
+                    {entry.game.map((g) => (
+                      <dd key={g}>“{g}”</dd>
+                    ))}
+                  </>
+                )}
+                <dt>Where</dt>
+                <dd>{entry.where}</dd>
+                {entry.includes && (
+                  <>
+                    <dt>Already includes</dt>
+                    <dd>{entry.includes}</dd>
+                  </>
+                )}
+                <dt>Use</dt>
+                <dd>{entry.use}</dd>
+                {entry.example && (
+                  <>
+                    <dt>Example</dt>
+                    <dd>{entry.example}</dd>
+                  </>
+                )}
+              </dl>
+              {entry.confidence && <ConfidenceBadge value={entry.confidence} />}
+              {entry.image && (
+                <img
+                  className={ui.helpImage}
+                  src={`${import.meta.env.BASE_URL}${entry.image.src}`}
+                  alt={entry.image.alt}
+                  width={640}
+                  height={481}
+                  loading="lazy"
+                />
+              )}
+            </HelpPopover>
+          )}
+        </div>
         {badge}
         {highlighted && <span className={ui.requiredBadge}>Required</span>}
         {missing && !missing.message && required?.kind === 'number' && context && inputKey && (
@@ -69,51 +118,10 @@ export function Field({ help, info, label, badge, note, wide, group, inputKey, p
             Confirm value
           </button>
         )}
-        {entry && (
-          <HelpPopover title={text}>
-            <dl className={ui.helpList}>
-              {entry.game && (
-                <>
-                  <dt>In the game</dt>
-                  {entry.game.map((g) => (
-                    <dd key={g}>“{g}”</dd>
-                  ))}
-                </>
-              )}
-              <dt>Where</dt>
-              <dd>{entry.where}</dd>
-              {entry.includes && (
-                <>
-                  <dt>Already includes</dt>
-                  <dd>{entry.includes}</dd>
-                </>
-              )}
-              <dt>Use</dt>
-              <dd>{entry.use}</dd>
-              {entry.example && (
-                <>
-                  <dt>Example</dt>
-                  <dd>{entry.example}</dd>
-                </>
-              )}
-            </dl>
-            {entry.confidence && <ConfidenceBadge value={entry.confidence} />}
-            {entry.image && (
-              <img
-                className={ui.helpImage}
-                src={`${import.meta.env.BASE_URL}${entry.image.src}`}
-                alt={entry.image.alt}
-                width={640}
-                height={481}
-                loading="lazy"
-              />
-            )}
-          </HelpPopover>
-        )}
       </div>
       {children(id)}
       {(note || missing?.message) && (
-        <div className={ui.note}>
+        <div className={ui.note} id={`${id}-note`}>
           {missing?.message && <p className={ui.requiredNote}>{missing.message}</p>}
           {note && <div>{note}</div>}
         </div>
@@ -131,11 +139,27 @@ export function Field({ help, info, label, badge, note, wide, group, inputKey, p
       data-required={highlighted || undefined}
       data-incomplete={Boolean(missing) || undefined}
     >
-      {body}
+      <FieldAccessibility.Provider
+        value={{
+          required: !!required,
+          invalid: !!missing,
+          describedBy: [required ? `${id}-required` : '', note || missing?.message ? `${id}-note` : ''].filter(Boolean).join(' ') || undefined,
+        }}
+      >
+        {body}
+      </FieldAccessibility.Provider>
     </div>
   ) : (
     <div className={className} data-input-key={inputKey} data-required={highlighted || undefined} data-incomplete={Boolean(missing) || undefined}>
-      {body}
+      <FieldAccessibility.Provider
+        value={{
+          required: !!required,
+          invalid: !!missing,
+          describedBy: [required ? `${id}-required` : '', note || missing?.message ? `${id}-note` : ''].filter(Boolean).join(' ') || undefined,
+        }}
+      >
+        {body}
+      </FieldAccessibility.Provider>
     </div>
   );
 }

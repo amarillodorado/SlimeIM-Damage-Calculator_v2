@@ -105,12 +105,14 @@ export function Dialog({
   title,
   children,
   footer,
+  actions,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  actions?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -135,9 +137,12 @@ export function Dialog({
         <div className={ui.dialogInner}>
           <header className={ui.dialogHead}>
             <h2>{title}</h2>
-            <button type="button" className={ui.iconButton} aria-label="Close" onClick={onClose}>
-              <Icon name="close" />
-            </button>
+            <div className={ui.dialogActions}>
+              {actions}
+              <button type="button" className={ui.iconButton} aria-label="Close" onClick={onClose}>
+                <Icon name="close" />
+              </button>
+            </div>
           </header>
           <div className={ui.dialogBody}>{children}</div>
           {footer && <footer className={ui.dialogFoot}>{footer}</footer>}

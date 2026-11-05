@@ -1,15 +1,14 @@
 import { ATTRIBUTE_LABEL } from '../../domain/attributes';
-import { ATTRIBUTES, type Attribute, type Enemy, type Guard } from '../../domain/types';
+import type { Enemy, Guard } from '../../domain/types';
+import { AttributePicker } from '../../components/AttributePicker';
 import { Field } from '../../components/Field';
-import { NumberInput, Segmented, Select, Switch, TextInput } from '../../components/inputs';
-import { AttributeDot, Card } from '../../components/layout';
+import { NumberInput, Segmented, Switch, TextInput } from '../../components/inputs';
+import { Card } from '../../components/layout';
 import ui from '../../components/ui.module.css';
 import { useWorkspace } from '../../state/workspaceContext';
 import css from './calculator.module.css';
 import { fmtInt } from './format';
 import { useActiveHit } from './useCalculator';
-
-const ATTRIBUTE_OPTIONS = ATTRIBUTES.map((a) => ({ value: a, label: ATTRIBUTE_LABEL[a] }));
 
 export function EnemyCard() {
   const { workspace, activeHit, dispatch } = useWorkspace();
@@ -29,7 +28,7 @@ export function EnemyCard() {
       id="enemy"
       title="Enemy"
       collapsible
-      subtitle={workspace.hits.length > 1 ? 'Shared by all setups — tap the enemy in battle.' : 'Tap the enemy in battle to see these values.'}
+      subtitle={workspace.hits.length > 1 ? 'Shared by all setups.' : undefined}
       summary={[
         e.name.trim() || 'Enemy',
         ATTRIBUTE_LABEL[e.attribute],
@@ -42,16 +41,11 @@ export function EnemyCard() {
         .filter(Boolean)
         .join(' · ')}
     >
-      <div className={ui.grid}>
+      <Field help="attribute" inputKey="enemy.attribute" label="Enemy attribute" group wide>
+        {() => <AttributePicker ariaLabel="Enemy attribute" value={e.attribute} onChange={(attribute) => set({ attribute })} />}
+      </Field>
+      <div className={`${ui.grid} ${css.identityGrid}`}>
         <Field label="Name (optional)">{(id) => <TextInput id={id} value={e.name} placeholder="e.g. Tornado Ant" onChange={(name) => set({ name })} />}</Field>
-        <Field help="attribute" inputKey="enemy.attribute" label="Enemy attribute">
-          {(id) => (
-            <div className={css.attrRow}>
-              <AttributeDot attribute={e.attribute} />
-              <Select<Attribute> id={id} value={e.attribute} options={ATTRIBUTE_OPTIONS} onChange={(attribute) => set({ attribute })} />
-            </div>
-          )}
-        </Field>
         <Field help="enemyDef" inputKey="enemy.def">
           {(id) => <NumberInput id={id} value={e.def} onChange={(def) => set({ def })} onConfirm={(filled) => confirmInput('enemy.def', filled)} />}
         </Field>
@@ -74,12 +68,7 @@ export function EnemyCard() {
             />
           )}
         </Field>
-        <Field
-          help="enemyRes"
-          inputKey="enemy.magicRes"
-          label="Magic resistance"
-          badge={usesMagic ? used : undefined}
-        >
+        <Field help="enemyRes" inputKey="enemy.magicRes" label="Magic resistance" badge={usesMagic ? used : undefined}>
           {(id) => (
             <NumberInput
               id={id}

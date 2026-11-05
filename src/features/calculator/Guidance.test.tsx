@@ -103,7 +103,7 @@ describe('required-input guidance', () => {
 
   it('starts enabled, highlights unanswered choices, and accepts the already selected option', async () => {
     const user = userEvent.setup();
-    show();
+    show(defaultWorkspace());
     expect(screen.getByRole('switch', { name: 'Highlight required inputs' })).toBeChecked();
     expect(field('attack.kind')).toHaveAttribute('data-required', 'true');
     expect(selected('Hit type', /Soul of Combos/)).toBeChecked();
@@ -115,7 +115,7 @@ describe('required-input guidance', () => {
 
   it('hides guidance when disabled while keeping an incomplete calculation unavailable', async () => {
     const user = userEvent.setup();
-    show();
+    show(defaultWorkspace());
     expect(document.querySelectorAll('[data-required="true"]').length).toBeGreaterThan(0);
     await user.click(screen.getByRole('switch', { name: 'Highlight required inputs' }));
     expect(document.querySelectorAll('[data-required="true"]')).toHaveLength(0);
@@ -147,9 +147,9 @@ describe('required-input guidance', () => {
 
   it('calculates a fresh ordinary hit only after its required values and choices are confirmed', async () => {
     const user = userEvent.setup();
-    show();
-    await user.click(screen.getByLabelText('Attribute'));
-    await user.selectOptions(screen.getByLabelText('Enemy attribute'), 'fire');
+    show(defaultWorkspace());
+    await user.click(selected('Attribute', 'Fire'));
+    await user.click(selected('Enemy attribute', 'Fire'));
     await user.click(selected('Attack type', 'Magic'));
     await user.click(selected('How do you enter ATK?', /Battle ATK/));
     await user.click(selected('Hit type', /Normal soul/));
@@ -243,7 +243,7 @@ describe('required-input guidance', () => {
 
   it('remembers confirmed selections when the saved workspace is reopened', async () => {
     const user = userEvent.setup();
-    const view = show();
+    const view = show(defaultWorkspace());
     await user.click(selected('Hit type', /Soul of Combos/));
     expect(field('attack.kind')).not.toHaveAttribute('data-required', 'true');
     await waitFor(() => {

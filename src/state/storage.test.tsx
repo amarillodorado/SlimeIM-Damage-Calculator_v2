@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadJSON, saveJSON, STORAGE_KEYS, usePersistentState } from './storage';
 
-const normalize = (raw: unknown): string[] => Array.isArray(raw) ? raw.filter((name): name is string => typeof name === 'string') : [];
+const normalize = (raw: unknown): string[] => (Array.isArray(raw) ? raw.filter((name): name is string => typeof name === 'string') : []);
 
 function ProviderHarness({ immediate = true }: { immediate?: boolean }) {
   const [providers, setProviders, saveState] = usePersistentState(STORAGE_KEYS.units, () => [] as string[], normalize, { immediate });
@@ -37,7 +37,9 @@ describe('browser provider persistence', () => {
   });
 
   it('reports failed storage honestly while retaining the current in-memory changes', () => {
-    const save = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Quota exceeded', 'QuotaExceededError'); });
+    const save = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    });
     render(<ProviderHarness />);
     expect(screen.getByLabelText('Save state')).toHaveTextContent('unavailable');
     fireEvent.click(screen.getByRole('button', { name: 'Add provider' }));
@@ -51,8 +53,12 @@ describe('browser provider persistence', () => {
   });
 
   it('handles blocked storage reads and writes without making the form unusable', () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new DOMException('Blocked', 'SecurityError'); });
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Blocked', 'SecurityError'); });
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('Blocked', 'SecurityError');
+    });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Blocked', 'SecurityError');
+    });
     render(<ProviderHarness />);
     fireEvent.click(screen.getByRole('button', { name: 'Add provider' }));
     expect(screen.getByLabelText('Providers')).toHaveTextContent('New provider');

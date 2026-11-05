@@ -370,18 +370,19 @@ export function computeHit(input: HitInput, roll: number = ROLL_MID, trace = fal
   const comboBase = D(k.comboMultiplier ?? 1);
   const combo = soc ? ONE : maxD(0, comboBase.add(comboBase.compare(1) > 0 ? t('comboDmg').div(100) : ZERO));
   d = d.mul(combo);
-  if (combo.compare(1))
-    push('combo', 'Soul Combos', `entered base ${comboBase.mul(100).toString()}% + separately entered eligible combo damage`, combo);
+  if (combo.compare(1)) push('combo', 'Soul Combos', `entered base ${comboBase.mul(100).toString()}% + separately entered eligible combo damage`, combo);
   if (k.crit) {
     const crit = k.superCrit ? getSuperCriticalFactor(input) : regularDecimalRate(CRIT_BASE, t('critDmg'), t('critResDown'));
     d = d.mul(crit);
     push(
       'crit',
       k.superCrit ? 'Super Critical' : 'Critical',
-      k.superCrit ? `base ${SUPER_CRIT_BASE}; favorable power/resistance ×${SUPER_CRIT_POWER_SCALE}; penalties unscaled` : join('1.3', [
-        [n('critDmg'), 'critical power'],
-        [n('critResDown'), 'res DOWN'],
-      ]),
+      k.superCrit
+        ? `base ${SUPER_CRIT_BASE}; favorable power/resistance ×${SUPER_CRIT_POWER_SCALE}; penalties unscaled`
+        : join('1.3', [
+            [n('critDmg'), 'critical power'],
+            [n('critResDown'), 'res DOWN'],
+          ]),
       crit,
     );
   }

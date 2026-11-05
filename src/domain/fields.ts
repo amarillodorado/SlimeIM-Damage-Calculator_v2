@@ -85,7 +85,8 @@ const HELP = {
     label: 'Weakness result',
     where: 'The Weak Point! or Super Weak Point! text shown on the hit.',
     use: 'Select None, Weak Point or Super Weak Point as shown on the attack. Attribute-side weakness can come from the natural matchup or an applicable protection bonus against the enemy’s attribute. Super Weak Point also requires weakness to the attack type you use: Physical for a physical attacker, Magic for a magic attacker. Attribute-side weakness alone gives Weak Point; attack-type weakness alone gives no weakness message. This selects eligible weakness effects and True Attribute Unbound without replacing the natural attribute matchup.',
-    example: 'Magic Milim with an applicable damage-to-Wind protection bonus against a Wind enemy weak only to Physical shows Weak Point. Super Weak Point additionally requires weakness to Magic.',
+    example:
+      'Magic Milim with an applicable damage-to-Wind protection bonus against a Wind enemy weak only to Physical shows Weak Point. Super Weak Point additionally requires weakness to Magic.',
   },
   specialHits: {
     label: 'Special hits',
