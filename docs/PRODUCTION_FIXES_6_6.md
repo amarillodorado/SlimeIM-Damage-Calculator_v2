@@ -43,7 +43,7 @@ Target selection controls which single-target/AoE-specific effects apply. Changi
 
 “Soul Combos” remains the finisher control; “Weakness result” remains the observed Weak/Super Weak selection. Confidence labels retain the distinction between recovered-client support, compatibility with observed damage, and an assumption. Unsupported mechanics remain identified so the interface does not imply a complete legal turn/skill simulator.
 
-Tests execute before release and in CI; they are not application entry points and are not copied to the static `dist/` deployment. The final Docker stage copies only `dist/`, not the test runner or development dependency tree.
+Tests execute before release and in CI; they are not application entry points and are not copied to the static `dist/` deployment. Static hosting serves only `dist/`, not the test runner or development dependency tree.
 
 ## Validation scope
 

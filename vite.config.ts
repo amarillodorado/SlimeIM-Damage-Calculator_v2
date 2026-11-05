@@ -2,7 +2,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 // `base: './'` keeps asset URLs relative, so the build works from any sub-path
-// (GitHub Pages, a Docker/nginx container, or a plain static host).
+// (GitHub Pages or another static host).
 export default defineConfig({
   base: './',
   plugins: [react()],

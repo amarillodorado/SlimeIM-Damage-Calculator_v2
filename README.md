@@ -71,7 +71,7 @@ The result is conditional on the entered hit outcomes and effect eligibility. Ba
 
 ## Static hosting
 
-Build with `npm run build` and serve `dist/` on a static host. Asset URLs are relative, so sub-path hosting is supported. The included Docker configuration serves the build with nginx (`$PORT`, default 8080).
+Build with `npm run build` and serve `dist/` on a static host. Asset URLs are relative, so sub-path hosting is supported.
 
 Vercel Web Analytics is integrated with the React SDK. Enable Web Analytics for the project in the Vercel dashboard, then deploy the app. Page views use `/calculator`, `/teams` and `/guide`; calculator inputs, share codes and guide anchors are excluded from these paths. Local development uses analytics debug mode.
 
