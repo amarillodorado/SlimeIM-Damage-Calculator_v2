@@ -18,6 +18,9 @@ const NAV: { page: Page; label: string; icon: IconName }[] = [
   { page: 'guide', label: 'Guide', icon: 'guide' },
 ];
 
+/** Sister tool for the skill points, protection gauge and secret skill gauge of a turn's souls. */
+const ORB_CALC_URL = 'https://slime-im-calc-orb.vercel.app/';
+
 const TITLES: Record<Page, string> = {
   calculator: 'Damage calculator',
   teams: 'Buff combination comparison',
@@ -80,6 +83,16 @@ export function App() {
               </a>
             ))}
           </nav>
+          <a
+            className={styles.siblingLink}
+            href={ORB_CALC_URL}
+            target="_blank"
+            rel="noopener"
+            title="Skill point, protection gauge and secret skill gauge calculator"
+          >
+            Orb calc
+            <Icon name="external" size={14} />
+          </a>
         </div>
       </header>
 

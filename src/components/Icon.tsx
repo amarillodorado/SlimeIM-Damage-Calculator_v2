@@ -31,6 +31,7 @@ const PATHS = {
   arrowDown: 'M12 5v14M6 13l6 6 6-6',
   arrowUp: 'M12 19V5M6 11l6-6 6 6',
   duplicate: 'M8 8h11v11H8zM5 16V5h11',
+  external: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
 } as const;
 
 export type IconName = keyof typeof PATHS;

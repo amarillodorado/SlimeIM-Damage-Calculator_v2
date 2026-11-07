@@ -96,6 +96,23 @@
   box-shadow: var(--shadow-1);
 }
 
+.siblingLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 6px 4px;
+  color: var(--color-muted);
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.siblingLink:hover {
+  color: var(--color-accent);
+}
+
 .main {
   min-height: calc(100dvh - var(--header-h));
 }
